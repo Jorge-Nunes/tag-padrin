@@ -16,6 +16,9 @@ async function bootstrap() {
     transform: true,
   }));
 
+  // Define o prefixo global '/api' para todas as rotas
+  app.setGlobalPrefix('api');
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
