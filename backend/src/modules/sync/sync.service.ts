@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
@@ -35,11 +36,12 @@ export class SyncService {
   constructor(
     private prisma: PrismaService,
     private settingsService: SettingsService,
+    private configService: ConfigService,
   ) { }
 
   async syncAllTags(): Promise<SyncResult[]> {
     const settings = await this.settingsService.getSettings();
-    const brgpsBaseUrl = settings?.brgpsBaseUrl;
+    const brgpsBaseUrl = this.configService.get<string>('BRGPS_BASE_URL');
     const brgpsToken = settings?.brgpsToken;
 
     if (!brgpsBaseUrl || !brgpsToken) {
@@ -184,7 +186,7 @@ export class SyncService {
   async syncTag(tag: TagData): Promise<SyncResult> {
     try {
       const settings = await this.settingsService.getSettings();
-      const brgpsBaseUrl = settings?.brgpsBaseUrl;
+      const brgpsBaseUrl = this.configService.get<string>('BRGPS_BASE_URL');
       const brgpsToken = settings?.brgpsToken;
 
       if (!brgpsBaseUrl || !brgpsToken) {

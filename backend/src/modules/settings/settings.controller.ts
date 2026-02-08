@@ -19,7 +19,6 @@ export class SettingsController {
         @Body()
         data: {
             syncInterval?: number;
-            brgpsBaseUrl?: string;
             brgpsToken?: string;
             traccarUrl?: string;
             traccarToken?: string;
