@@ -6,13 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   app.enableCors({
-    origin: [
-      process.env.FRONTEND_URL || 'http://localhost:5173',
-      'http://localhost:3001',
-      'http://127.0.0.1:3001',
-      'http://tagpadrin.evo.dedyn.io:9090',
-      'http://tagpadrin.evo.dedyn.io',
-    ],
+    origin: true, // Permite qualquer origem
     credentials: true,
   });
 
