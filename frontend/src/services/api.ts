@@ -2,14 +2,9 @@ import axios from 'axios';
 
 const getBaseURL = () => {
   if (import.meta.env.VITE_API_URL) {
-    if (import.meta.env.VITE_API_URL.startsWith('/')) {
-      const { protocol, host } = window.location;
-      return `${protocol}//${host}${import.meta.env.VITE_API_URL}`;
-    }
     return import.meta.env.VITE_API_URL;
   }
-  const { protocol, host } = window.location;
-  return `${protocol}//${host}/api`;
+  return 'http://localhost:3000';
 };
 
 const api = axios.create({
