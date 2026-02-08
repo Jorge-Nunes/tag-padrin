@@ -1,10 +1,15 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-  // Fallback para localhost caso a variável não esteja definida
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:3000`;
+  if (import.meta.env.VITE_API_URL) {
+    if (import.meta.env.VITE_API_URL.startsWith('/')) {
+      const { protocol, host } = window.location;
+      return `${protocol}//${host}${import.meta.env.VITE_API_URL}`;
+    }
+    return import.meta.env.VITE_API_URL;
+  }
+  const { protocol, host } = window.location;
+  return `${protocol}//${host}/api`;
 };
 
 const api = axios.create({
