@@ -1,0 +1,425 @@
+import { Injectable, Logger } from '@nestjs/common';
+import axios from 'axios';
+import { PrismaService } from '../../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
+
+interface BRGPSPosition {
+  lat?: string | number;
+  latitude?: string | number;
+  lon?: string | number;
+  longitude?: string | number;
+  lng?: string | number;
+  speed?: string | number;
+  direction?: string | number;
+  timestamp?: number;
+  battery?: number;
+}
+
+interface TagData {
+  id: string;
+  brgpsId: string;
+  status: string;
+}
+
+export interface SyncResult {
+  tagId: string;
+  success: boolean;
+  position?: any;
+  error?: string;
+}
+
+@Injectable()
+export class SyncService {
+  private readonly logger = new Logger(SyncService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private settingsService: SettingsService,
+  ) { }
+
+  async syncAllTags(): Promise<SyncResult[]> {
+    const settings = await this.settingsService.getSettings();
+    const brgpsBaseUrl = settings?.brgpsBaseUrl;
+    const brgpsToken = settings?.brgpsToken;
+
+    if (!brgpsBaseUrl || !brgpsToken) {
+      this.logger.error(
+        'Configurações da BRGPS ausentes para sincronização global',
+      );
+      return [];
+    }
+
+    const tags = (await this.prisma.tag.findMany({
+      where: { status: 'ACTIVE' },
+      select: { id: true, brgpsId: true, status: true },
+    })) as TagData[];
+
+    this.logger.log(`Iniciando sincronização otimizada de ${tags.length} tags`);
+
+    const chunkSize = 20; // Aumentado para melhor performance
+    const results: SyncResult[] = [];
+
+    for (let i = 0; i < tags.length; i += chunkSize) {
+      const chunk = tags.slice(i, i + chunkSize);
+      const brgpsIds = chunk.map((t) => t.brgpsId).join(',');
+
+      try {
+        const url = `${brgpsBaseUrl}/tag?ids=${brgpsIds}`;
+        const headers = {
+          api_token: brgpsToken,
+          timestamp: Math.floor(Date.now() / 1000).toString(),
+          'Content-Type': 'application/json',
+        };
+
+        const response = await axios.get(url, { headers, timeout: 15000 });
+        const batchData = this.normalizeBatchResponse(response.data);
+
+        // Processar os resultados do lote em paralelo
+        const chunkPromises = chunk.map(async (tag) => {
+          const tagInfo = batchData.find(
+            (d: any) => String(d.id) === String(tag.brgpsId),
+          );
+          if (!tagInfo) {
+            return {
+              tagId: tag.id,
+              success: false,
+              error: 'Dispositivo não encontrado na resposta do lote',
+            };
+          }
+          return this.processTagUpdate(tag, tagInfo);
+        });
+
+        const chunkResults = await Promise.all(chunkPromises);
+        results.push(...chunkResults);
+      } catch (error: any) {
+        this.logger.error(`Erro ao processar lote de tags: ${error.message}`);
+        // Em caso de erro no lote, tentamos registrar o erro para todas as tags do lote
+        results.push(
+          ...chunk.map((t) => ({
+            tagId: t.id,
+            success: false,
+            error: `Erro no lote: ${error.message}`,
+          })),
+        );
+      }
+    }
+
+    return results;
+  }
+
+  private normalizeBatchResponse(data: any): any[] {
+    if (data && data.data && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object' && !Array.isArray(data)) return [data];
+    return [];
+  }
+
+  private async processTagUpdate(tag: TagData, positionData: BRGPSPosition): Promise<SyncResult> {
+    try {
+      if (!positionData || (!positionData.lat && !positionData.latitude)) {
+        throw new Error('Dados de posição inválidos');
+      }
+
+      const latRaw = positionData.lat || positionData.latitude;
+      const lonRaw = positionData.lon || positionData.lng || positionData.longitude;
+
+      const lat = typeof latRaw === 'string' ? parseFloat(latRaw) : latRaw as number;
+      const lon = typeof lonRaw === 'string' ? parseFloat(lonRaw) : lonRaw as number;
+      const timestampMs = positionData.timestamp ? positionData.timestamp * 1000 : Date.now();
+
+      // Transação para consistência e performance
+      const [position] = await this.prisma.$transaction([
+        this.prisma.position.create({
+          data: {
+            tag: { connect: { id: tag.id } },
+            latitude: lat,
+            longitude: lon,
+            speed: positionData.speed
+              ? typeof positionData.speed === 'string'
+                ? parseFloat(positionData.speed)
+                : positionData.speed
+              : null,
+            direction: positionData.direction
+              ? typeof positionData.direction === 'string'
+                ? parseInt(positionData.direction)
+                : positionData.direction
+              : null,
+            timestamp: new Date(timestampMs),
+            rawData: positionData as any,
+          },
+        }),
+        this.prisma.tag.update({
+          where: { id: tag.id },
+          data: {
+            lastLatitude: lat,
+            lastLongitude: lon,
+            lastPositionAt: new Date(timestampMs),
+            lastSyncAt: new Date(),
+          },
+        }),
+        this.prisma.syncLog.create({
+          data: {
+            tagId: tag.id,
+            status: 'SUCCESS',
+            brgpsResponse: positionData as any,
+          },
+        }),
+      ]);
+
+      try {
+        await this.sendToTraccar(tag, position);
+      } catch (e: any) {
+        this.logger.error(`Erro Traccar ${tag.brgpsId}: ${e.message}`);
+      }
+
+      return { tagId: tag.id, success: true, position };
+    } catch (error: any) {
+      await this.prisma.syncLog.create({
+        data: { tagId: tag.id, status: 'ERROR', message: error.message },
+      });
+      return { tagId: tag.id, success: false, error: error.message };
+    }
+  }
+
+  async syncTag(tag: TagData): Promise<SyncResult> {
+    try {
+      const settings = await this.settingsService.getSettings();
+      const brgpsBaseUrl = settings?.brgpsBaseUrl;
+      const brgpsToken = settings?.brgpsToken;
+
+      if (!brgpsBaseUrl || !brgpsToken) {
+        throw new Error('Configurações da BRGPS ausentes no banco de dados');
+      }
+
+      const url = `${brgpsBaseUrl}/tag?ids=${tag.brgpsId}`;
+
+      const headers = {
+        api_token: brgpsToken,
+        timestamp: Math.floor(Date.now() / 1000).toString(),
+        'Content-Type': 'application/json',
+      };
+
+      const response = await axios.get(url, { headers, timeout: 10000 });
+      let positionData: BRGPSPosition;
+
+      if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        if (response.data.data.length === 0) {
+          throw new Error(
+            'Nenhuma posição retornada pela BRGPS (array data vazio)',
+          );
+        }
+        positionData = response.data.data[0];
+      } else if (Array.isArray(response.data)) {
+        if (response.data.length === 0) {
+          throw new Error('Nenhuma posição retornada pela BRGPS (array vazio)');
+        }
+        positionData = response.data[0];
+      } else if (
+        response.data &&
+        typeof response.data === 'object' &&
+        response.data !== null
+      ) {
+        if (response.data.statusCode && response.data.statusCode !== 200) {
+          throw new Error(
+            `Erro na API BRGPS: ${response.data.message || 'Status ' + response.data.statusCode
+            }`,
+          );
+        }
+        positionData = response.data as BRGPSPosition;
+      } else {
+        throw new Error(
+          `Formato de resposta inesperado: ${typeof response.data}`,
+        );
+      }
+
+      if (!positionData || (!positionData.lat && !positionData.latitude)) {
+        throw new Error(
+          `Dados de posição inválidos ou incompletos: ${JSON.stringify(
+            positionData,
+          )}`,
+        );
+      }
+
+      // Normalizar campos
+      const latRaw = positionData.lat || positionData.latitude;
+      const lonRaw = positionData.lon || positionData.lng || positionData.longitude;
+
+      if (latRaw === undefined || lonRaw === undefined) {
+        return {
+          tagId: tag.id,
+          success: false,
+          error: 'Dados de latitude/longitude ausentes',
+        };
+      }
+
+      const lat = typeof latRaw === 'string' ? parseFloat(latRaw) : latRaw;
+      const lon = typeof lonRaw === 'string' ? parseFloat(lonRaw) : lonRaw;
+
+      const timestampMs = positionData.timestamp
+        ? positionData.timestamp * 1000
+        : Date.now();
+
+      const position = await this.prisma.position.create({
+        data: {
+          tag: { connect: { id: tag.id } },
+          latitude: lat,
+          longitude: lon,
+          speed: positionData.speed
+            ? typeof positionData.speed === 'string'
+              ? parseFloat(positionData.speed)
+              : positionData.speed
+            : null,
+          direction: positionData.direction
+            ? typeof positionData.direction === 'string'
+              ? parseInt(positionData.direction)
+              : positionData.direction
+            : null,
+          timestamp: new Date(timestampMs),
+          rawData: positionData as any,
+        },
+      });
+
+      await this.prisma.tag.update({
+        where: { id: tag.id },
+        data: {
+          lastLatitude: position.latitude,
+          lastLongitude: position.longitude,
+          lastSpeed: position.speed,
+          lastDirection: position.direction,
+          lastPositionAt: position.timestamp,
+          lastSyncAt: new Date(),
+        },
+      });
+
+      await this.prisma.syncLog.create({
+        data: {
+          tagId: tag.id,
+          status: 'SUCCESS',
+          brgpsResponse: positionData as any,
+        },
+      });
+
+      this.logger.log(`Tag ${tag.brgpsId} sincronizada com sucesso`);
+
+      try {
+        await this.sendToTraccar(tag, position);
+      } catch (traccarError) {
+        this.logger.error(`Erro ao enviar para Traccar: ${traccarError.message}`);
+      }
+
+      return {
+        tagId: tag.id,
+        success: true,
+        position,
+      };
+    } catch (error) {
+      await this.prisma.syncLog.create({
+        data: {
+          tagId: tag.id,
+          status: 'ERROR',
+          message: error.message,
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  async sendToTraccar(tag: TagData, position: any) {
+    const settings = await this.settingsService.getSettings();
+    const traccarBaseUrl = settings?.traccarUrl;
+    // O traccarToken pode ser usado se a API exigir no futuro, por enquanto usamos a URL que já contém os parâmetros se configurada assim, ou apenas os básicos.
+
+    if (!traccarBaseUrl) {
+      this.logger.warn('TRACCAR_BASE_URL não configurado. Pulos envio para Traccar.');
+      return;
+    }
+
+    let batteryPercentage: number | undefined = undefined;
+    const batteryLevel = position.rawData?.battery;
+    if (batteryLevel !== undefined && batteryLevel !== -1) {
+      if (batteryLevel === 3) batteryPercentage = 100;
+      else if (batteryLevel === 2) batteryPercentage = 70;
+      else if (batteryLevel === 1) batteryPercentage = 35;
+      else if (batteryLevel === 0) batteryPercentage = 10;
+    }
+
+    const params: any = {
+      id: tag.brgpsId,
+      lat: position.latitude,
+      lon: position.longitude,
+      timestamp:
+        position.timestamp instanceof Date
+          ? position.timestamp.toISOString()
+          : new Date(position.timestamp).toISOString(),
+      speed: (position.speed || 0) * 1.852,
+      bearing: position.direction || 0,
+      batt: batteryPercentage,
+      valid: true,
+    };
+
+    try {
+      const response = await axios.get(traccarBaseUrl, {
+        params,
+        timeout: 10000,
+      });
+      this.logger.log(
+        `Dados enviados para Traccar com sucesso: Tag ${tag.brgpsId} (Status: ${response.status})`,
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `Falha ao enviar para Traccar (Tag ${tag.brgpsId}): ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  async getSyncLogs(tagId?: string, limit: number = 50): Promise<any> {
+    return await this.prisma.syncLog.findMany({
+      where: tagId ? { tagId } : undefined,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: { tag: true },
+    });
+  }
+
+  async cleanupOldData(daysRetention: number = 7) {
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() - daysRetention);
+
+    this.logger.log(
+      `Limpando dados mais antigos que ${daysRetention} dias (${expirationDate.toISOString()})`,
+    );
+
+    try {
+      const syncLogsDeleted = await this.prisma.syncLog.deleteMany({
+        where: { createdAt: { lt: expirationDate } },
+      });
+
+      const traccarLogsDeleted = await this.prisma.traccarLog.deleteMany({
+        where: { createdAt: { lt: expirationDate } },
+      });
+
+      const positionsDeleted = await this.prisma.position.deleteMany({
+        where: { createdAt: { lt: expirationDate } },
+      });
+
+      this.logger.log(
+        `Cleanup finalizado: ${syncLogsDeleted.count} SyncLogs, ${traccarLogsDeleted.count} TraccarLogs, ${positionsDeleted.count} Posições removidas.`,
+      );
+
+      return {
+        syncLogsDeleted: syncLogsDeleted.count,
+        traccarLogsDeleted: traccarLogsDeleted.count,
+        positionsDeleted: positionsDeleted.count,
+      };
+    } catch (error: any) {
+      this.logger.error(`Erro durante o cleanup: ${error.message}`);
+      throw error;
+    }
+  }
+}

@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Tag {
+  id                String       @id @default(uuid())
+  brgpsId           String       @unique // ID on the BRGPS side
+  name              String
+  description       String?
+  status            String       @default("ACTIVE")
+  isActive          Boolean      @default(true)
+  lastLatitude      Float?
+  lastLongitude     Float?
+  lastSpeed         Float?
+  lastDirection     Int?
+  lastPositionAt    DateTime?
+  lastSyncAt        DateTime?
+  lastTraccarSendAt DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  positions         Position[]
+  traccarLogs       TraccarLog[]
+  syncLogs          SyncLog[]
+
+  @@map("tags")
+  @@index([lastSyncAt])
+  @@index([status])
+}
+
+model Position {
+  id              String   @id @default(uuid())
+  tagId           String
+  tag             Tag      @relation(fields: [tagId], references: [id])
+  latitude        Float
+  longitude       Float
+  speed           Float?
+  course          Float?
+  direction       Int? // Alternative name for course used in some services
+  timestamp       DateTime
+  rawData         Json? // Store full payload for audit
+  syncedToTraccar Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@map("positions")
+  @@index([tagId, timestamp])
+  @@index([createdAt])
+}
+
+model SyncLog {
+  id            String   @id @default(uuid())
+  tagId         String?
+  tag           Tag?     @relation(fields: [tagId], references: [id])
+  status        String // SUCCESS, ERROR
+  message       String?
+  itemsCount    Int      @default(0)
+  brgpsResponse Json?
+  createdAt     DateTime @default(now())
+
+  @@map("sync_logs")
+  @@index([tagId, createdAt])
+  @@index([status, createdAt])
+}
+
+model TraccarLog {
+  id         String   @id @default(uuid())
+  tagId      String
+  tag        Tag      @relation(fields: [tagId], references: [id])
+  positionId String?
+  status     String // SUCCESS, ERROR
+  payload    Json?
+  response   Json?
+  createdAt  DateTime @default(now())
+
+  @@map("traccar_logs")
+  @@index([tagId, createdAt])
+}
+
+model SystemSettings {
+  id            String   @id @default("default")
+  syncInterval  Int      @default(60) // in seconds
+  brgpsBaseUrl  String?
+  brgpsToken    String?
+  traccarUrl    String?
+  traccarToken  String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("system_settings")
+}
