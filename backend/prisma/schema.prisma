@@ -26,20 +26,20 @@ model User {
 
 model Tag {
   id                String       @id @default(uuid())
-  brgpsId           String       @unique // ID on the BRGPS side
+  brgpsId           String       @unique @map("brgps_id")
   name              String
   description       String?
   status            String       @default("ACTIVE")
   isActive          Boolean      @default(true)
-  lastLatitude      Float?
-  lastLongitude     Float?
-  lastSpeed         Float?
-  lastDirection     Int?
-  lastPositionAt    DateTime?
-  lastSyncAt        DateTime?
-  lastTraccarSendAt DateTime?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  lastLatitude      Float?       @map("last_latitude")
+  lastLongitude     Float?       @map("last_longitude")
+  lastSpeed         Float?       @map("last_speed")
+  lastDirection     Int?         @map("last_direction")
+  lastPositionAt    DateTime?    @map("last_position_at")
+  lastSyncAt        DateTime?    @map("last_sync_at")
+  lastTraccarSendAt DateTime?    @map("last_traccar_send_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
   positions         Position[]
   traccarLogs       TraccarLog[]
   syncLogs          SyncLog[]
@@ -51,7 +51,7 @@ model Tag {
 
 model Position {
   id              String   @id @default(uuid())
-  tagId           String
+  tagId           String   @map("tag_id")
   tag             Tag      @relation(fields: [tagId], references: [id])
   latitude        Float
   longitude       Float
@@ -59,9 +59,9 @@ model Position {
   course          Float?
   direction       Int? // Alternative name for course used in some services
   timestamp       DateTime
-  rawData         Json? // Store full payload for audit
+  rawData         Json?    @map("raw_data")
   syncedToTraccar Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
 
   @@map("positions")
   @@index([tagId, timestamp])
@@ -70,13 +70,12 @@ model Position {
 
 model SyncLog {
   id            String   @id @default(uuid())
-  tagId         String?
+  tagId         String?  @map("tag_id")
   tag           Tag?     @relation(fields: [tagId], references: [id])
   status        String // SUCCESS, ERROR
   message       String?
-  itemsCount    Int      @default(0)
-  brgpsResponse Json?
-  createdAt     DateTime @default(now())
+  brgpsResponse Json?    @map("brgps_response")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("sync_logs")
   @@index([tagId, createdAt])
@@ -85,13 +84,13 @@ model SyncLog {
 
 model TraccarLog {
   id         String   @id @default(uuid())
-  tagId      String
+  tagId      String   @map("tag_id")
   tag        Tag      @relation(fields: [tagId], references: [id])
-  positionId String?
+  positionId String?  @map("position_id")
   status     String // SUCCESS, ERROR
   payload    Json?
   response   Json?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) @map("created_at")
 
   @@map("traccar_logs")
   @@index([tagId, createdAt])
