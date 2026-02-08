@@ -106,5 +106,5 @@ model SystemSettings {
   traccarToken  String?
   updatedAt     DateTime @updatedAt
 
-  @@map("system_settings")
+  @@map("settings")
 }
