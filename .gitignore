@@ -31,7 +31,8 @@ Thumbs.db
 *.db
 
 # Prisma
-backend/prisma/migrations/
+# Não ignorar migrações - elas são necessárias para produção
+# backend/prisma/migrations/
 
 # Logs
 logs/
