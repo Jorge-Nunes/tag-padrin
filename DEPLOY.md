@@ -18,16 +18,18 @@ nano .env.production
 ```
 
 #### Variáveis obrigatórias:
-- `FRONTEND_PORT`: Porta onde o frontend vai rodar (padrão: 5175)
+- `BACKEND_PORT`: Porta onde o backend vai rodar (padrão: 6000)
+- `FRONTEND_PORT`: Porta onde o frontend vai rodar (padrão: 8080)
 - `API_URL`: URL ou IP do servidor para acesso à API
-  - Para acesso local: `http://localhost:3000`
-  - Para acesso externo por IP: `http://192.168.1.100:3000`
-  - Para acesso por domínio: `http://tagpadrin.evo.dedyn.io:3000`
+  - Para acesso local: `http://localhost:6000/api`
+  - Para acesso externo por IP: `http://192.168.1.100:6000/api`
+  - Para acesso por domínio: `http://tagpadrin.evo.dedyn.io:6000/api`
 
 **Exemplo de .env.production:**
 ```env
-FRONTEND_PORT=5175
-API_URL=http://tagpadrin.evo.dedyn.io:3000
+BACKEND_PORT=6000
+FRONTEND_PORT=8080
+API_URL=http://tagpadrin.evo.dedyn.io:6000/api
 ```
 
 ### 3. Execute o deploy
@@ -72,15 +74,15 @@ docker logs tag-padrin-db -f
 ### Testar endpoints
 ```bash
 # Backend health check
-curl http://localhost:3000/
+curl http://localhost:6000/
 
 # Login
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:6000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@tagpadrin.com","password":"admin123"}'
 
 # Frontend
-curl -I http://localhost:5175/
+curl -I http://localhost:8080/
 ```
 
 ## Configuração de Firewall
@@ -89,26 +91,26 @@ Certifique-se de que as portas estão abertas no firewall:
 
 ```bash
 # UFW
-sudo ufw allow 3000/tcp
-sudo ufw allow 5175/tcp
+sudo ufw allow 6000/tcp
+sudo ufw allow 8080/tcp
 sudo ufw reload
 
 # FirewallD
-sudo firewall-cmd --permanent --add-port=3000/tcp
-sudo firewall-cmd --permanent --add-port=5175/tcp
+sudo firewall-cmd --permanent --add-port=6000/tcp
+sudo firewall-cmd --permanent --add-port/8080/tcp
 sudo firewall-cmd --reload
 
 # iptables
-sudo iptables -A INPUT -p tcp --dport 3000 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 5175 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 6000 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
 ```
 
 ## Acessos
 
 Após o deploy:
 
-- **Frontend**: `http://SEU_IP:5175` ou `http://seu-dominio.com:5175`
-- **Backend API**: `http://SEU_IP:3000` ou `http://seu-dominio.com:3000`
+- **Frontend**: `http://SEU_IP:8080` ou `http://seu-dominio.com:8080`
+- **Backend API**: `http://SEU_IP:6000` ou `http://seu-dominio.com:6000`
 
 ## Credenciais Padrão
 
@@ -128,8 +130,8 @@ docker logs tag-padrin-web
 ### Erro de porta já em uso
 ```bash
 # Verificar o que está usando a porta
-sudo lsof -i :5175
-sudo lsof -i :3000
+sudo lsof -i :8080
+sudo lsof -i :6000
 
 # Matar o processo
 sudo kill -9 <PID>
@@ -158,6 +160,9 @@ cd /opt/tag-padrin
 
 # Pull das mudanças
 git pull origin main
+
+# Atualizar arquivo .env.production se necessário
+nano .env.production
 
 # Executar deploy
 ./deploy.sh

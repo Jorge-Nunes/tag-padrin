@@ -21,8 +21,13 @@ if [ -z "$API_URL" ]; then
 fi
 
 if [ -z "$FRONTEND_PORT" ]; then
-    echo "⚠️  FRONTEND_PORT não definida, usando padrão 5175"
-    export FRONTEND_PORT=5175
+    echo "⚠️  FRONTEND_PORT não definida, usando padrão 8080"
+    export FRONTEND_PORT=8080
+fi
+
+if [ -z "$BACKEND_PORT" ]; then
+    echo "⚠️  BACKEND_PORT não definida, usando padrão 6000"
+    export BACKEND_PORT=6000
 fi
 
 # Extrair o domínio/host da API_URL
@@ -33,6 +38,7 @@ else
 fi
 
 echo "📋 Configuração:"
+echo "   Backend Porta: $BACKEND_PORT"
 echo "   Frontend Porta: $FRONTEND_PORT"
 echo "   API URL: $API_URL"
 echo "   Host: $HOST"
@@ -57,10 +63,10 @@ docker compose -f docker-compose.prod.yml ps
 # Testar backend
 echo ""
 echo "🧪 Testando backend..."
-if curl -f -s -o /dev/null http://localhost:3000/; then
-    echo "✅ Backend respondendo na porta 3000"
+if curl -f -s -o /dev/null http://localhost:$BACKEND_PORT/; then
+    echo "✅ Backend respondendo na porta $BACKEND_PORT"
 else
-    echo "⚠️  Backend não respondeu na porta 3000 (pode ser normal se ainda estiver iniciando)"
+    echo "⚠️  Backend não respondeu na porta $BACKEND_PORT (pode ser normal se ainda estiver iniciando)"
 fi
 
 # Testar frontend
@@ -77,7 +83,7 @@ echo "🎉 Deploy concluído!"
 echo ""
 echo "📱 Acessos:"
 echo "   Frontend: http://$HOST:$FRONTEND_PORT"
-echo "   Backend:  http://$HOST:3000/api"
+echo "   Backend:  http://$HOST:$BACKEND_PORT/api"
 echo ""
 echo "🔐 Credenciais:"
 echo "   Email: admin@tagpadrin.com"
