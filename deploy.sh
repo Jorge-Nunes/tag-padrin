@@ -25,9 +25,17 @@ if [ -z "$FRONTEND_PORT" ]; then
     export FRONTEND_PORT=5175
 fi
 
+# Extrair o domínio/host da API_URL
+if [[ $API_URL =~ http://([^/:]+) ]]; then
+    export HOST="${BASH_REMATCH[1]}"
+else
+    export HOST="localhost"
+fi
+
 echo "📋 Configuração:"
 echo "   Frontend Porta: $FRONTEND_PORT"
 echo "   API URL: $API_URL"
+echo "   Host: $HOST"
 echo ""
 
 # Parar containers antigos
@@ -68,8 +76,8 @@ echo ""
 echo "🎉 Deploy concluído!"
 echo ""
 echo "📱 Acessos:"
-echo "   Frontend: http://$API_URL:$FRONTEND_PORT"
-echo "   Backend:  http://$API_URL:3000"
+echo "   Frontend: http://$HOST:$FRONTEND_PORT"
+echo "   Backend:  http://$HOST:3000/api"
 echo ""
 echo "🔐 Credenciais:"
 echo "   Email: admin@tagpadrin.com"
