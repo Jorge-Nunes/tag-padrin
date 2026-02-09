@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "tags" ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true;
+
+-- AlterTable
+ALTER TABLE "positions" ADD COLUMN IF NOT EXISTS "syncedToTraccar" BOOLEAN NOT NULL DEFAULT false;
