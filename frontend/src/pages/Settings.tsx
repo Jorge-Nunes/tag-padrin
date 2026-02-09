@@ -50,8 +50,9 @@ export function Settings() {
         }
 
         try {
+            const syncInterval = parseInt(formData.syncInterval);
             await settingsApi.update({
-                syncInterval: parseInt(formData.syncInterval),
+                syncInterval: isNaN(syncInterval) ? 60 : syncInterval,
                 brgpsBaseUrl: formData.brgpsBaseUrl,
                 brgpsToken: formData.brgpsToken,
                 traccarUrl: formData.traccarUrl,
@@ -63,8 +64,15 @@ export function Settings() {
                 type: 'success',
             });
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Erro ao salvar configurações';
-            showAlert({ title: 'Erro', message, type: 'danger' });
+            console.error('Save error:', error);
+            const data = error.response?.data;
+            const message = data?.message || 'Erro ao salvar configurações';
+
+            showAlert({
+                title: 'Erro de Validação',
+                message: Array.isArray(message) ? message.join('\n') : message,
+                type: 'danger'
+            });
         }
     };
 

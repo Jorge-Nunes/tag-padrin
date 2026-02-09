@@ -33,9 +33,17 @@ export function GlobalModal() {
                 </div>
 
                 <div className="space-y-2">
-                    <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
-                        {options.message}
-                    </p>
+                    <div className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+                        {Array.isArray(options.message) ? (
+                            <ul className="list-disc list-inside text-left inline-block">
+                                {options.message.map((msg, idx) => (
+                                    <li key={idx}>{msg}</li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>{options.message}</p>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex w-full space-x-3 pt-4">

@@ -17,6 +17,11 @@ export class SettingsController {
     @Put()
     @SetMetadata('roles', ['ADMIN'])
     async updateSettings(@Body() data: UpdateSettingsDto) {
-        return this.settingsService.updateSettings(data);
+        try {
+            return await this.settingsService.updateSettings(data);
+        } catch (error) {
+            console.error('Error updating settings:', error);
+            throw error;
+        }
     }
 }
