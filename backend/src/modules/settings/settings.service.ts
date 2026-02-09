@@ -24,6 +24,7 @@ export class SettingsService implements OnModuleInit {
                 data: {
                     id: 'default',
                     syncInterval: 60,
+                    brgpsBaseUrl: this.configService.get('BRGPS_BASE_URL') || '',
                     brgpsToken: this.configService.get('BRGPS_API_TOKEN') || '',
                     traccarUrl: this.configService.get('TRACCAR_BASE_URL') || '',
                     traccarToken: this.configService.get('TRACCAR_API_TOKEN') || '',
@@ -40,6 +41,7 @@ export class SettingsService implements OnModuleInit {
 
     async updateSettings(data: {
         syncInterval?: number;
+        brgpsBaseUrl?: string;
         brgpsToken?: string;
         traccarUrl?: string;
         traccarToken?: string;

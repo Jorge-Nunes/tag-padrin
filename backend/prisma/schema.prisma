@@ -99,6 +99,7 @@ model TraccarLog {
 model SystemSettings {
   id            String   @id @default("default")
   syncInterval  Int      @default(60) @map("sync_interval")
+  brgpsBaseUrl  String?  @map("brgps_base_url")
   brgpsToken    String?  @map("brgps_token")
   traccarUrl    String?  @map("traccar_url")
   traccarToken  String?  @map("traccar_token")

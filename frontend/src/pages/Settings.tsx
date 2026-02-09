@@ -52,6 +52,7 @@ export function Settings() {
         try {
             await settingsApi.update({
                 syncInterval: parseInt(formData.syncInterval),
+                brgpsBaseUrl: formData.brgpsBaseUrl,
                 brgpsToken: formData.brgpsToken,
                 traccarUrl: formData.traccarUrl,
                 traccarToken: formData.traccarToken,

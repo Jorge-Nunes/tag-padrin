@@ -8,6 +8,10 @@ export class UpdateSettingsDto {
 
     @IsOptional()
     @IsString()
+    brgpsBaseUrl?: string;
+
+    @IsOptional()
+    @IsString()
     brgpsToken?: string;
 
     @IsOptional()

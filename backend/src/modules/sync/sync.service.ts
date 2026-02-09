@@ -41,7 +41,7 @@ export class SyncService {
 
   async syncAllTags(): Promise<SyncResult[]> {
     const settings = await this.settingsService.getSettings();
-    const brgpsBaseUrl = this.configService.get<string>('BRGPS_BASE_URL');
+    const brgpsBaseUrl = settings?.brgpsBaseUrl;
     const brgpsToken = settings?.brgpsToken;
 
     if (!brgpsBaseUrl || !brgpsToken) {
@@ -186,7 +186,7 @@ export class SyncService {
   async syncTag(tag: TagData): Promise<SyncResult> {
     try {
       const settings = await this.settingsService.getSettings();
-      const brgpsBaseUrl = this.configService.get<string>('BRGPS_BASE_URL');
+      const brgpsBaseUrl = settings?.brgpsBaseUrl;
       const brgpsToken = settings?.brgpsToken;
 
       if (!brgpsBaseUrl || !brgpsToken) {
