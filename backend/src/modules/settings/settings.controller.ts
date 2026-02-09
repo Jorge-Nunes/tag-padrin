@@ -1,5 +1,6 @@
 import { Controller, Get, Put, Body, UseGuards, SetMetadata } from '@nestjs/common';
 import { SettingsService } from './settings.service';
+import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
@@ -15,15 +16,7 @@ export class SettingsController {
 
     @Put()
     @SetMetadata('roles', ['ADMIN'])
-    async updateSettings(
-        @Body()
-        data: {
-            syncInterval?: number;
-            brgpsToken?: string;
-            traccarUrl?: string;
-            traccarToken?: string;
-        },
-    ) {
+    async updateSettings(@Body() data: UpdateSettingsDto) {
         return this.settingsService.updateSettings(data);
     }
 }
