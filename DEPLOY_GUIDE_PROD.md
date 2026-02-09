@@ -7,7 +7,18 @@ Este guia descreve como colocar a aplicação Tag Padrin em produção utilizand
 1.  Docker e Docker Compose instalados no servidor.
 2.  Domínio apontando para o servidor (opcional, pode usar IP).
 
-## Passos para Deploy
+## 🚀 Deploy Automático (Recomendado)
+
+Para atualizar o código, rebuildar os containers e aplicar as migrações de banco de dados automaticamente, execute:
+
+```bash
+chmod +x deploy_prod.sh
+./deploy_prod.sh
+```
+
+Este script cuida de todo o processo de deploy seguro.
+
+## Passos para Deploy Manual
 
 ### 1. Preparar Variáveis de Ambiente
 
@@ -55,6 +66,12 @@ Acesse a aplicação através do navegador:
 - `.env.production.example`: Modelo das variáveis de ambiente.
 
 ## Manutenção
+
+### Migrações de Banco de Dados
+Se você não usar o script automático, lembre-se de rodar as migrações manualmente após atualizações:
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env run --rm backend npx prisma migrate deploy
+```
 
 ### Logs
 Para ver os logs de produção:
