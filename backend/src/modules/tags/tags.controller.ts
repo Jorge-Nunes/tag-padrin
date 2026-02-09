@@ -32,34 +32,36 @@ export class TagsController {
     return await this.tagsService.bulkCreate(data);
   }
 
-  @Post()
-  async create(@Body() data: Partial<Tag>): Promise<Tag> {
-    return await this.tagsService.create(data);
-  }
+import { CreateTagDto } from './dto/create-tag.dto';
+import { UpdateTagDto } from './dto/update-tag.dto';
 
-  @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Tag> {
-    return await this.tagsService.findOne(id);
-  }
+// ... imports
 
-  @Put(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() data: Partial<Tag>,
-  ): Promise<Tag> {
-    return await this.tagsService.update(id, data);
-  }
+@Post()
+async create(@Body() data: CreateTagDto): Promise < Tag > {
+  return await this.tagsService.create(data);
+}
 
-  @Delete(':id')
-  async remove(@Param('id') id: string): Promise<Tag> {
-    return await this.tagsService.remove(id);
-  }
+// ...
 
-  @Get(':id/positions')
-  async getPositions(
-    @Param('id') id: string,
-    @Query('limit') limit: string,
-  ): Promise<any[]> {
-    return await this.tagsService.getPositions(id, parseInt(limit) || 100);
-  }
+@Put(':id')
+async update(
+  @Param('id') id: string,
+  @Body() data: UpdateTagDto,
+): Promise < Tag > {
+  return await this.tagsService.update(id, data);
+}
+
+@Delete(':id')
+async remove(@Param('id') id: string): Promise < Tag > {
+  return await this.tagsService.remove(id);
+}
+
+@Get(':id/positions')
+async getPositions(
+  @Param('id') id: string,
+  @Query('limit') limit: string,
+): Promise < any[] > {
+  return await this.tagsService.getPositions(id, parseInt(limit) || 100);
+}
 }
