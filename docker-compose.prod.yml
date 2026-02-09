@@ -7,13 +7,13 @@ services:
     container_name: tag-padrin-db-prod
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,7 +32,7 @@ services:
     restart: always
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000
     depends_on:
@@ -44,22 +44,16 @@ services:
           memory: 1024M
           cpus: '1.0'
 
-  # Frontend Build Stage (Multi-stage build is handled in Dockerfile, but for clarity here)
-  # Actually, we will use a separate Nginx service to serve the built files.
-  # Simplest approach: Use a node image to build, and mount to nginx.
-  # OR: Update frontend/Dockerfile to include Nginx stage. Let's do that.
-  # Then 'frontend' service becomes the web server.
-
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_URL: ${VITE_API_URL}
+        VITE_API_URL: ${API_URL}
     container_name: tag-padrin-web-prod
     restart: always
     ports:
-      - "${APP_PORT}:80"
+      - "${FRONTEND_PORT}:80"
     depends_on:
       - backend
 
