@@ -35,6 +35,8 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-tagpadrin}
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3000
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
