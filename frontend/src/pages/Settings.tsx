@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Save, RefreshCw, Clock, Globe, Shield, Send } from 'lucide-react';
+import { Save, RefreshCw, Clock, Globe, Send } from 'lucide-react';
 import { syncApi, settingsApi } from '../services/api';
 import { useModalStore } from '../store/modalStore';
 import { useAuthStore } from '../store/authStore';

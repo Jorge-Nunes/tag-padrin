@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Plus, Edit2, Trash2, User, Search, ChevronLeft, ChevronRight, Filter, Shield, Key } from 'lucide-react';
+import { Plus, Edit2, Trash2, User, Search, Filter, Shield, Key } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
@@ -68,7 +68,7 @@ export function Users() {
         });
     }, [users, searchTerm, roleFilter]);
 
-    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    // const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const paginatedUsers = useMemo(() => {
         const startIndex = (currentPage - 1) * itemsPerPage;
         return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
@@ -83,6 +83,7 @@ export function Users() {
         try {
             if (editingUser) {
                 // Na edição não enviamos a senha pelo formulário principal
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { password, ...updateData } = formData;
                 await usersApi.update(editingUser.id, updateData);
                 showAlert({ title: 'Sucesso', message: 'Usuário atualizado!', type: 'success' });
@@ -113,7 +114,7 @@ export function Users() {
                 showAlert({ title: 'Sucesso', message: 'Senha alterada!', type: 'success' });
                 setShowPasswordModal(false);
                 setPasswordData({ newPassword: '', confirmPassword: '' });
-            } catch (error) {
+            } catch {
                 showAlert({ title: 'Erro', message: 'Erro ao alterar senha', type: 'danger' });
             }
         }
@@ -142,7 +143,7 @@ export function Users() {
                     await usersApi.delete(id);
                     loadUsers();
                     showAlert({ title: 'Sucesso', message: 'Usuário removido!', type: 'success' });
-                } catch (error) {
+                } catch {
                     showAlert({ title: 'Erro', message: 'Falha ao excluir.', type: 'danger' });
                 }
             }

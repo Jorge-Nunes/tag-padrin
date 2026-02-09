@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import Papa from 'papaparse';
-import { Upload, FileText, CheckCircle, AlertTriangle, X, Info } from 'lucide-react';
+import { X, Upload, FileText, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { tagsApi } from '../services/api';
