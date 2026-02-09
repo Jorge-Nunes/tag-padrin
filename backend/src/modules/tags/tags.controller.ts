@@ -13,6 +13,8 @@ import {
 import { TagsService } from './tags.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Tag } from '@prisma/client';
+import { CreateTagDto } from './dto/create-tag.dto';
+import { UpdateTagDto } from './dto/update-tag.dto';
 
 @Controller('tags')
 @UseGuards(JwtAuthGuard)
@@ -32,36 +34,34 @@ export class TagsController {
     return await this.tagsService.bulkCreate(data);
   }
 
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
+  @Post()
+  async create(@Body() data: CreateTagDto): Promise<Tag> {
+    return await this.tagsService.create(data);
+  }
 
-// ... imports
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<Tag> {
+    return await this.tagsService.findOne(id);
+  }
 
-@Post()
-async create(@Body() data: CreateTagDto): Promise < Tag > {
-  return await this.tagsService.create(data);
-}
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() data: UpdateTagDto,
+  ): Promise<Tag> {
+    return await this.tagsService.update(id, data);
+  }
 
-// ...
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<Tag> {
+    return await this.tagsService.remove(id);
+  }
 
-@Put(':id')
-async update(
-  @Param('id') id: string,
-  @Body() data: UpdateTagDto,
-): Promise < Tag > {
-  return await this.tagsService.update(id, data);
-}
-
-@Delete(':id')
-async remove(@Param('id') id: string): Promise < Tag > {
-  return await this.tagsService.remove(id);
-}
-
-@Get(':id/positions')
-async getPositions(
-  @Param('id') id: string,
-  @Query('limit') limit: string,
-): Promise < any[] > {
-  return await this.tagsService.getPositions(id, parseInt(limit) || 100);
-}
+  @Get(':id/positions')
+  async getPositions(
+    @Param('id') id: string,
+    @Query('limit') limit: string,
+  ): Promise<any[]> {
+    return await this.tagsService.getPositions(id, parseInt(limit) || 100);
+  }
 }
