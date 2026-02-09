@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -8,6 +8,7 @@ import { TraccarModule } from './modules/traccar/traccar.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { UsersModule } from './modules/users/users.module';
+import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
 
 @Module({
   imports: [
@@ -24,4 +25,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(HttpLoggerMiddleware)
+      .forRoutes('*');
+  }
+}
