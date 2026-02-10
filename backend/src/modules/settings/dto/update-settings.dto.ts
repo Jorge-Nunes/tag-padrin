@@ -1,8 +1,8 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateSettingsDto {
     @IsOptional()
-    @IsInt()
+    @IsNumber()
     @Min(30)
     syncInterval?: number;
 
