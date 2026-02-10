@@ -23,13 +23,15 @@ services:
           memory: 512M
           cpus: '0.50'
 
-  # Backend API
+  # Backend API + Frontend
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: tag-padrin-api-prod
     restart: always
+    ports:
+      - "${FRONTEND_PORT:-9090}:3000"
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-tagpadrin}
@@ -45,19 +47,6 @@ services:
         limits:
           memory: 1024M
           cpus: '1.0'
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        VITE_API_URL: ${API_URL:-/api}
-    container_name: tag-padrin-web-prod
-    restart: always
-    ports:
-      - "${FRONTEND_PORT:-9090}:80"
-    depends_on:
-      - backend
 
 volumes:
   postgres_data_prod:
