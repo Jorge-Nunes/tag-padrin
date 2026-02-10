@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: tag-padrin-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+    networks:
+      - tag-padrin-network
+
   postgres:
     image: postgres:16-alpine
     container_name: tag-padrin-db
@@ -17,6 +31,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - tag-padrin-network
     deploy:
       resources:
         limits:
@@ -28,8 +44,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: tag-padrin-api
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=development
       - DB_HOST=postgres
@@ -46,6 +62,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - tag-padrin-network
     deploy:
       resources:
         limits:
@@ -57,13 +75,19 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: tag-padrin-web
-    ports:
-      - "5175:5173"
+    expose:
+      - "5173"
     environment:
       - VITE_API_URL=/api
     depends_on:
       - backend
+    networks:
+      - tag-padrin-network
     restart: always
 
 volumes:
   postgres_data:
+
+networks:
+  tag-padrin-network:
+    driver: bridge
