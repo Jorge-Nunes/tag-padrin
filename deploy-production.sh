@@ -18,14 +18,23 @@ NC='\033[0m'
 
 # Detectar docker compose
 if command -v docker-compose &> /dev/null; then
-    DOCKER_COMPOSE="docker-compose"
+    DOCKER_COMPOSE="docker-compose -f docker-compose.prod.yml"
 elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
-    DOCKER_COMPOSE="docker compose"
+    DOCKER_COMPOSE="docker compose -f docker-compose.prod.yml"
 else
     echo -e "${RED}✗ ERRO: Docker Compose não encontrado${NC}"
     exit 1
 fi
 
+# Detectar docker compose padrão (para comandos exec)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_BASE="docker-compose"
+elif command -v docker &> /dev/null && docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_BASE="docker compose"
+fi
+
+echo -e "${YELLOW}Usando: docker-compose.prod.yml (sem volume mounts)${NC}"
+echo ""
 echo -e "${BLUE}→ Passo 1: Atualizando código do repositório...${NC}"
 git pull origin main
 if [ $? -ne 0 ]; then

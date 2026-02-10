@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: tag-padrin-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+    networks:
+      - tag-padrin-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: tag-padrin-db
+    environment:
+      POSTGRES_DB: tagpadrin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tag-padrin-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.50'
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tag-padrin-api
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=tagpadrin
+      - DB_USER=postgres
+      - DB_PASSWORD=secret123
+      - DATABASE_URL=postgresql://postgres:secret123@postgres:5432/tagpadrin
+    env_file:
+      - .env
+    # Sem volume mounts em produção - usa o código buildado na imagem
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tag-padrin-network
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tag-padrin-web
+    expose:
+      - "5173"
+    environment:
+      - VITE_API_URL=/api
+    depends_on:
+      - backend
+    networks:
+      - tag-padrin-network
+    restart: always
+
+volumes:
+  postgres_data:
+
+networks:
+  tag-padrin-network:
+    driver: bridge
