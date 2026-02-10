@@ -135,7 +135,7 @@ USER_COUNT=$($DOCKER_COMPOSE exec -T postgres psql -U postgres -d tagpadrin -t -
 
 if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
     echo -e "${YELLOW}⚠ Nenhum usuário encontrado. Executando seed...${NC}"
-    $DOCKER_COMPOSE exec -T backend npx prisma db seed
+    $DOCKER_COMPOSE exec -T backend node prisma/seed.js
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Usuário admin criado!${NC}"

@@ -39,7 +39,7 @@ echo "✓ Backend está rodando"
 echo ""
 
 echo "→ Executando seed para criar usuário admin..."
-$DOCKER_COMPOSE $DOCKER_COMPOSE_FILE exec -T backend npx prisma db seed
+$DOCKER_COMPOSE $DOCKER_COMPOSE_FILE exec -T backend node prisma/seed.js
 
 if [ $? -eq 0 ]; then
     echo ""
