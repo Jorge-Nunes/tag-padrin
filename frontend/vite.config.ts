@@ -9,5 +9,11 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://backend:3000',
+        changeOrigin: true,
+      },
+    },
   },
 })
