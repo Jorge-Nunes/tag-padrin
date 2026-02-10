@@ -7,20 +7,25 @@ echo "🚀 Iniciando deploy de produção..."
 echo "📥 Atualizando repositório..."
 git pull
 
-# 2. Reconstruir imagens (importante para copiar novas migrations e dependências)
-echo "🏗️ Construindo containers..."
-docker compose -f docker-compose.prod.yml --env-file .env build
+# 2. Reconstruir e subir containers (importante para copiar novas migrations)
+# Agora as migrações são aplicadas automaticamente via entrypoint
+echo "🏗️ Construindo e reiniciando containers..."
+docker compose --env-file .env up -d --build
 
-# 3. Subir containers
-echo "🔄 Reiniciando serviços..."
-docker compose -f docker-compose.prod.yml --env-file .env up -d
+# 3. Aguardar containers iniciarem
+echo "⏳ Aguardando containers iniciarem..."
+sleep 5
 
-# 4. Rodar Migrations
-echo "🗄️ Aplicando migrações de banco de dados..."
-docker compose -f docker-compose.prod.yml --env-file .env run --rm backend npx prisma migrate deploy
+# 4. Verificar status
+echo "📊 Status dos containers:"
+docker compose ps
 
 # 5. Limpeza (opcional)
 # echo "🧹 Limpando imagens antigas..."
 # docker image prune -f
 
 echo "✅ Deploy concluído com sucesso!"
+echo ""
+echo "📝 Para verificar os logs:"
+echo "   docker compose logs -f backend"
+echo "   docker compose logs -f postgres"

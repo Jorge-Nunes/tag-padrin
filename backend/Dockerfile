@@ -29,10 +29,15 @@ COPY --from=backend-builder /app/backend/package*.json ./
 COPY --from=backend-builder /app/backend/node_modules ./node_modules
 COPY --from=backend-builder /app/backend/prisma ./prisma
 
+# Copy entrypoint script
+COPY --from=backend-builder /app/backend/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
 # Copy frontend build to 'client' folder inside backend
 COPY --from=frontend-builder /app/frontend/dist ./client
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["npm", "run", "start:prod"]
