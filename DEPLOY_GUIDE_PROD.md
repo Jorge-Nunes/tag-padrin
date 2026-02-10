@@ -35,7 +35,7 @@ Edite o arquivo `.env.production` e defina senhas seguras e o domínio correto (
 Execute o seguinte comando para construir e iniciar os containers em modo de produção:
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose up -d --build
 ```
 
 ### 3. Verificar Status
@@ -43,13 +43,13 @@ docker compose -f docker-compose.prod.yml up -d --build
 Verifique se todos os containers estão rodando:
 
 ```bash
-docker compose -f docker-compose.prod.yml ps
+docker compose ps
 ```
 
 Você deve ver três serviços:
-- `tag-padrin-db-prod` (Banco de Dados)
-- `tag-padrin-api-prod` (Backend)
-- `tag-padrin-web-prod` (Frontend + Nginx)
+- `tag-padrin-db` (Banco de Dados)
+- `tag-padrin-api` (Backend)
+- `tag-padrin-web` (Frontend + Nginx)
 
 ### 4. Acessar a Aplicação
 
@@ -68,24 +68,24 @@ Acesse a aplicação através do navegador:
 ## Manutenção
 
 ### Migrações de Banco de Dados
-Se você não usar o script automático, lembre-se de rodar as migrações manualmente após atualizações:
+As migrações são aplicadas automaticamente via entrypoint. Se precisar rodar manualmente:
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env run --rm backend npx prisma migrate deploy
+docker compose --env-file .env run --rm backend npx prisma migrate deploy
 ```
 
 ### Logs
 Para ver os logs de produção:
 ```bash
-docker compose -f docker-compose.prod.yml logs -f
+docker compose logs -f
 ```
 
 ### Parar a Aplicação
 ```bash
-docker compose -f docker-compose.prod.yml down
+docker compose down
 ```
 
 ### Atualizar
 ```bash
 git pull
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose up -d --build
 ```

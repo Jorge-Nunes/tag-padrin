@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para restaurar dump no banco de PRODUÇÃO
-# Container: tag-padrin-db-prod
+# Container: tag-padrin-db
 # Banco: tagpadrin
 
 if [ -z "$1" ]; then
@@ -20,12 +20,12 @@ echo "🚀 Restaurando dump no banco de PRODUÇÃO..."
 echo "⚠️  Isso irá sobrescrever os dados atuais da tabela 'settings' e outras."
 
 # Restaura o dump
-cat "$DUMP_FILE" | docker exec -i tag-padrin-db-prod psql -U postgres tagpadrin
+cat "$DUMP_FILE" | docker exec -i tag-padrin-db psql -U postgres tagpadrin
 
 if [ $? -eq 0 ]; then
     echo "✅ Restauração concluída com sucesso!"
     echo "🔄 Reiniciando containers da API para garantir que o cache do Prisma seja limpo..."
-    docker compose -f docker-compose.prod.yml restart backend
+    docker compose restart backend
     echo "✨ Processo finalizado."
 else
     echo "❌ Erro ao restaurar o banco."

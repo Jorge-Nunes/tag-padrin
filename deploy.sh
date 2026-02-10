@@ -46,11 +46,11 @@ echo ""
 
 # Parar containers antigos
 echo "🛑 Parando containers antigos..."
-docker compose -f docker-compose.prod.yml down
+docker compose down
 
 # Reconstruir e iniciar containers
 echo "🏗️  Construindo e iniciando containers..."
-docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker compose --env-file .env.production up -d --build
 
 # Aguardar containers iniciarem
 echo "⏳ Aguardando containers iniciarem..."
@@ -58,7 +58,7 @@ sleep 10
 
 # Verificar status
 echo "✅ Verificando status..."
-docker compose -f docker-compose.prod.yml ps
+docker compose ps
 
 # Testar backend
 echo ""
