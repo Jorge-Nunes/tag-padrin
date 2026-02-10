@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Entrypoint script para garantir migrações antes de iniciar a aplicação
 
 set -e
