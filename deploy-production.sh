@@ -128,7 +128,30 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
 fi
 echo ""
 
-echo -e "${BLUE}→ Passo 8: Verificando status final...${NC}"
+echo -e "${BLUE}→ Passo 8: Verificando se existe usuário admin...${NC}"
+
+# Verificar se existem usuários no banco
+USER_COUNT=$($DOCKER_COMPOSE exec -T postgres psql -U postgres -d tagpadrin -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | xargs)
+
+if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
+    echo -e "${YELLOW}⚠ Nenhum usuário encontrado. Executando seed...${NC}"
+    $DOCKER_COMPOSE exec -T backend npx prisma db seed
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Usuário admin criado!${NC}"
+        echo ""
+        echo "Credenciais padrão:"
+        echo "  Email: admin@tagpadrin.com"
+        echo "  Senha: admin123"
+    else
+        echo -e "${RED}✗ Erro ao criar usuário admin${NC}"
+    fi
+else
+    echo -e "${GREEN}✓ Já existem $USER_COUNT usuário(s) no banco${NC}"
+fi
+echo ""
+
+echo -e "${BLUE}→ Passo 9: Verificando status final...${NC}"
 echo ""
 $DOCKER_COMPOSE ps
 echo ""
