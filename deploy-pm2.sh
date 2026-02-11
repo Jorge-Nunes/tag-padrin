@@ -82,6 +82,7 @@ if [ ! -f ".env" ]; then
     
     cat > .env << EOF
 NODE_ENV=production
+PORT=3000
 DB_PASSWORD=${DB_PASSWORD}
 DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@localhost:5432/tagpadrin
 JWT_SECRET=${JWT_SECRET}
