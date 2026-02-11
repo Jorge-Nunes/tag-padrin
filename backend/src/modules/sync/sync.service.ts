@@ -387,6 +387,15 @@ export class SyncService {
     try {
       this.logger.debug(`Enviando para Traccar: ${JSON.stringify(params)}`);
       
+      // Construir URL completa para debug
+      const url = new URL(traccarBaseUrl);
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined) {
+          url.searchParams.append(key, params[key]);
+        }
+      });
+      this.logger.debug(`URL completa: ${url.toString()}`);
+      
       const response = await axios.get(traccarBaseUrl, {
         params,
         timeout: 10000,
@@ -409,6 +418,26 @@ export class SyncService {
       this.logger.error(
         `Payload enviado: ${JSON.stringify(params)}`,
       );
+      
+      // Tentar enviar sem o campo batt (pode ser que seja isso)
+      if (params.batt !== undefined) {
+        this.logger.warn(`Tentando enviar sem campo batt para tag ${tag.brgpsId}...`);
+        const paramsWithoutBatt = { ...params };
+        delete paramsWithoutBatt.batt;
+        
+        try {
+          const retryResponse = await axios.get(traccarBaseUrl, {
+            params: paramsWithoutBatt,
+            timeout: 10000,
+          });
+          this.logger.log(
+            `Sucesso ao enviar sem batt: Tag ${tag.brgpsId} (Status: ${retryResponse.status})`,
+          );
+          return;
+        } catch (retryError: any) {
+          this.logger.error(`Falha sem batt também: ${retryError.message}`);
+        }
+      }
       
       throw error;
     }
