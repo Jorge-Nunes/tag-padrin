@@ -13,6 +13,7 @@ interface Tag {
   name: string;
   description?: string;
   status: 'ACTIVE' | 'INACTIVE';
+  traccarUrl?: string;
   lastLatitude?: number;
   lastLongitude?: number;
   lastSyncAt?: string;
@@ -36,6 +37,7 @@ export function Tags() {
     name: '',
     description: '',
     status: 'ACTIVE',
+    traccarUrl: '',
   });
   const { showAlert, showConfirm } = useModalStore();
 
@@ -92,7 +94,7 @@ export function Tags() {
       }
       setShowModal(false);
       setEditingTag(null);
-      setFormData({ brgpsId: '', name: '', description: '', status: 'ACTIVE' });
+      setFormData({ brgpsId: '', name: '', description: '', status: 'ACTIVE', traccarUrl: '' });
       loadTags();
     } catch (error: any) {
       console.error('Erro ao salvar tag:', error);
@@ -107,6 +109,7 @@ export function Tags() {
       name: tag.name,
       description: tag.description || '',
       status: tag.status,
+      traccarUrl: tag.traccarUrl || '',
     });
     setShowModal(true);
   };
@@ -155,7 +158,7 @@ export function Tags() {
             <Search className="w-5 h-5 mr-2" />
             Importar
           </Button>
-          <Button onClick={() => { setEditingTag(null); setFormData({ brgpsId: '', name: '', description: '', status: 'ACTIVE' }); setShowModal(true); }} variant="strong" size="md">
+          <Button onClick={() => { setEditingTag(null); setFormData({ brgpsId: '', name: '', description: '', status: 'ACTIVE', traccarUrl: '' }); setShowModal(true); }} variant="strong" size="md">
             <Plus className="w-5 h-5 mr-2" />
             Novo Dispositivo
           </Button>
@@ -399,6 +402,17 @@ export function Tags() {
                 <option value="ACTIVE">Ativo</option>
                 <option value="INACTIVE">Inativo</option>
               </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">URL do Traccar (Opcional)</label>
+              <input
+                type="url"
+                value={formData.traccarUrl}
+                onChange={(e) => setFormData({ ...formData, traccarUrl: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white"
+                placeholder="Ex: http://acesso.ljlrastreadores.com.br:5055"
+              />
+              <p className="text-[10px] text-gray-400 mt-1 ml-1">Se não informado, as posições não serão enviadas para o Traccar</p>
             </div>
           </div>
           <div className="flex space-x-3 pt-2">

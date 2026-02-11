@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardBody } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Save, RefreshCw, Clock, Globe, Send } from 'lucide-react';
+import { Save, RefreshCw, Clock, Globe } from 'lucide-react';
 import { syncApi, settingsApi } from '../services/api';
 import { useModalStore } from '../store/modalStore';
 import { useAuthStore } from '../store/authStore';
@@ -11,8 +11,6 @@ export function Settings() {
         syncInterval: '60',
         brgpsBaseUrl: '',
         brgpsToken: '',
-        traccarUrl: '',
-        traccarToken: '',
     });
     const [loading, setLoading] = useState(false);
     const { showAlert } = useModalStore();
@@ -28,8 +26,6 @@ export function Settings() {
                     syncInterval: data.syncInterval.toString(),
                     brgpsBaseUrl: data.brgpsBaseUrl || '',
                     brgpsToken: data.brgpsToken || '',
-                    traccarUrl: data.traccarUrl || '',
-                    traccarToken: data.traccarToken || '',
                 });
             } catch (error) {
                 console.error('Erro ao carregar configurações:', error);
@@ -55,8 +51,6 @@ export function Settings() {
                 syncInterval: isNaN(syncInterval) ? 60 : syncInterval,
                 brgpsBaseUrl: formData.brgpsBaseUrl,
                 brgpsToken: formData.brgpsToken,
-                traccarUrl: formData.traccarUrl,
-                traccarToken: formData.traccarToken,
             });
             showAlert({
                 title: 'Sucesso',
@@ -138,40 +132,6 @@ export function Settings() {
                                     disabled={!isAdmin}
                                     className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white disabled:opacity-50"
                                     placeholder="Insira seu API Token"
-                                />
-                            </div>
-                        </CardBody>
-                    </Card>
-
-                    {/* Integração Traccar */}
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center space-x-2">
-                                <Send className="w-5 h-5 text-emerald-600" />
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Encaminhamento Traccar</h2>
-                            </div>
-                        </CardHeader>
-                        <CardBody className="space-y-4">
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-left">Endpoint de Destino (URL)</label>
-                                <input
-                                    type="text"
-                                    value={formData.traccarUrl}
-                                    onChange={(e) => setFormData({ ...formData, traccarUrl: e.target.value })}
-                                    disabled={!isAdmin}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white disabled:opacity-50"
-                                    placeholder="Ex: http://seu-servidor:5055"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-left">Token de Autorização (Opcional)</label>
-                                <input
-                                    type="password"
-                                    value={formData.traccarToken}
-                                    onChange={(e) => setFormData({ ...formData, traccarToken: e.target.value })}
-                                    disabled={!isAdmin}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white disabled:opacity-50"
-                                    placeholder="Insira o Token do Traccar se necessário"
                                 />
                             </div>
                         </CardBody>
