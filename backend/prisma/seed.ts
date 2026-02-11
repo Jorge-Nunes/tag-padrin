@@ -25,9 +25,8 @@ async function main() {
     create: {
       id: 'default',
       syncInterval: 60,
+      brgpsBaseUrl: '',
       brgpsToken: '',
-      traccarUrl: 'http://localhost:5055',
-      traccarToken: '',
     },
   });
 
