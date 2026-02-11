@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { SkeletonCard } from '../components/ui/Skeleton';
 import { tagsApi } from '../services/api';
 import { Activity, Clock, AlertCircle, ShieldCheck, Database } from 'lucide-react';
+import { spacing, colors } from '../design-tokens';
 
 interface Tag {
   id: string;
@@ -47,7 +49,7 @@ export function Dashboard() {
       icon: Database,
       subtitle: 'Dispositivos na conta',
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      bgColor: colors.status.info.bg,
       detail: 'Cadastradas no sistema'
     },
     {
@@ -56,7 +58,7 @@ export function Dashboard() {
       icon: Activity,
       subtitle: `${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% da frota total`,
       color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
+      bgColor: colors.status.success.bg,
       detail: 'Transmitindo dados'
     },
     {
@@ -65,17 +67,29 @@ export function Dashboard() {
       icon: AlertCircle,
       subtitle: 'Aguardando manutenção',
       color: 'text-amber-600',
-      bgColor: 'bg-amber-50 dark:bg-amber-900/20',
+      bgColor: colors.status.warning.bg,
       detail: 'Offline ou desativadas'
     },
   ];
 
   if (loading) {
-    return <div className="p-8">Carregando...</div>;
+    return (
+      <div className={`p-8 max-w-[1440px] mx-auto ${spacing.section}`}>
+        <div className="mb-8">
+          <div className="h-10 w-64 bg-gray-200 dark:bg-slate-700 rounded animate-pulse mb-2" />
+          <div className="h-4 w-96 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-[1440px] mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className={`p-4 sm:p-8 max-w-[1440px] mx-auto ${spacing.section} animate-in fade-in duration-700`}>
       <header>
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
           Dashboard
@@ -89,7 +103,7 @@ export function Dashboard() {
         {statCards.map((card) => (
           <Card
             key={card.title}
-            className="group hover:border-blue-200 dark:hover:border-blue-900 transition-all duration-300"
+            className="group hover:border-blue-200 dark:hover:border-blue-900 hover:shadow-md transition-all duration-300 cursor-default"
           >
             <CardBody className="p-7">
               <div className="flex justify-between items-start">

@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react';
+import { focus } from '../../design-tokens';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'strong';
@@ -12,7 +13,7 @@ export function Button({
   className = '',
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyles = `inline-flex items-center justify-center font-semibold transition-all duration-200 ${focus.ring} disabled:opacity-50 disabled:cursor-not-allowed`;
 
   const variants = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm',
@@ -21,11 +22,12 @@ export function Button({
     strong: 'bg-gray-800 text-white hover:bg-gray-900 active:scale-95 shadow-md dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white',
   };
 
+  // Touch targets WCAG AAA (mínimo 44x44px)
   const sizes = {
-    xs: 'px-2.5 py-1.5 text-xs rounded-md',
-    sm: 'px-3.5 py-2 text-sm rounded-md',
-    md: 'px-5 py-2.5 text-base rounded-md',
-    lg: 'px-8 py-3.5 text-lg rounded-md',
+    xs: 'min-h-[44px] px-3 py-2 text-xs rounded-md',
+    sm: 'min-h-[44px] px-4 py-2.5 text-sm rounded-md',
+    md: 'min-h-[44px] px-5 py-3 text-base rounded-md',
+    lg: 'min-h-[48px] px-8 py-3.5 text-lg rounded-md',
   };
 
   return (

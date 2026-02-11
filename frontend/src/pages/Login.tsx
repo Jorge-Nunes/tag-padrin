@@ -4,7 +4,9 @@ import { authApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui/Button';
 import { Card, CardBody } from '../components/ui/Card';
-import { MapPin, Lock, Mail, AlertCircle } from 'lucide-react';
+import { PasswordInput } from '../components/ui/PasswordInput';
+import { MapPin, Mail, AlertCircle } from 'lucide-react';
+import { focus } from '../design-tokens';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -48,48 +50,49 @@ export function Login() {
         <Card className="shadow-2xl border-gray-100 dark:border-slate-800">
           <CardBody className="p-8 md:p-10">
             {error && (
-              <div className="mb-8 p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-semibold flex items-center">
-                <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
+              <div 
+                className="mb-8 p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-sm font-semibold flex items-center"
+                role="alert"
+                aria-live="polite"
+              >
+                <AlertCircle className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1">
+                <label 
+                  htmlFor="email-input"
+                  className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest ml-1"
+                >
                   E-mail
                 </label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors pointer-events-none" aria-hidden="true" />
                   <input
+                    id="email-input"
                     type="email"
                     placeholder="voce@exemplo.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white placeholder:text-gray-400"
+                    className={`w-full pl-11 pr-4 min-h-[44px] py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl ${focus.within} outline-none transition-all dark:text-white placeholder:text-gray-400`}
                     required
+                    autoComplete="email"
+                    aria-label="Endereço de e-mail"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center ml-1">
-                  <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                    Senha
-                  </label>
-                </div>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white placeholder:text-gray-400"
-                    required
-                  />
-                </div>
-              </div>
+              <PasswordInput
+                id="password-input"
+                label="Senha"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
 
               <div className="pt-2">
                 <Button

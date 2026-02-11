@@ -1,0 +1,40 @@
+module.exports = {
+  apps: [
+    {
+      name: 'tag-padrin-backend',
+      cwd: '/opt/tag-padrin/backend',
+      script: 'dist/src/main.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3000,
+      },
+      error_file: '/var/log/tag-padrin-backend-error.log',
+      out_file: '/var/log/tag-padrin-backend-out.log',
+      log_file: '/var/log/tag-padrin-backend-combined.log',
+      time: true,
+      autorestart: true,
+      max_restarts: 10,
+      min_uptime: '10s',
+    },
+    {
+      name: 'tag-padrin-frontend',
+      cwd: '/opt/tag-padrin/frontend',
+      script: 'serve',
+      args: '-s dist -l 5173',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+      },
+      error_file: '/var/log/tag-padrin-frontend-error.log',
+      out_file: '/var/log/tag-padrin-frontend-out.log',
+      log_file: '/var/log/tag-padrin-frontend-combined.log',
+      time: true,
+      autorestart: true,
+      max_restarts: 10,
+      min_uptime: '10s',
+    },
+  ],
+};

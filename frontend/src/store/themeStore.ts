@@ -35,10 +35,27 @@ export const useThemeStore = create<ThemeState>()(
 
 function updateDOM(theme: 'light' | 'dark') {
     if (typeof document !== 'undefined') {
+        // Adiciona transição suave ao trocar tema
+        const root = document.documentElement;
+        
+        // Desabilita transições temporariamente se for primeira vez
+        const isFirstLoad = !root.style.getPropertyValue('--theme-transition');
+        
+        if (!isFirstLoad) {
+            root.style.setProperty('--theme-transition', 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease');
+        }
+        
         if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
+            root.classList.add('dark');
         } else {
-            document.documentElement.classList.remove('dark');
+            root.classList.remove('dark');
+        }
+        
+        // Marca que não é mais primeira carga
+        if (isFirstLoad) {
+            setTimeout(() => {
+                root.style.setProperty('--theme-transition', 'color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease');
+            }, 100);
         }
     }
 }

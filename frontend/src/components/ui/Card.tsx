@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { forwardRef } from 'react';
 
 interface CardProps {
   children: ReactNode;
@@ -6,7 +7,7 @@ interface CardProps {
   variant?: 'default' | 'elevated' | 'subtle';
 }
 
-export function Card({ children, className = '', variant = 'default' }: CardProps) {
+export const Card = forwardRef<HTMLDivElement, CardProps>(({ children, className = '', variant = 'default' }, ref) => {
   const variants = {
     default: 'bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700',
     elevated: 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-md',
@@ -14,11 +15,13 @@ export function Card({ children, className = '', variant = 'default' }: CardProp
   };
 
   return (
-    <div className={`${variants[variant]} rounded-xl transition-all duration-200 ${className}`}>
+    <div ref={ref} className={`${variants[variant]} rounded-xl transition-all duration-200 ${className}`}>
       {children}
     </div>
   );
-}
+});
+
+Card.displayName = 'Card';
 
 export function CardHeader({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
