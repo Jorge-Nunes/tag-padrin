@@ -361,12 +361,12 @@ export class SyncService {
       else if (batteryLevel === 0) batt = 10;
     }
 
-    // Timestamp em formato Unix (segundos) - formato mais compatível com OSRM
-    const timestampUnix = position.timestamp instanceof Date
-      ? Math.floor(position.timestamp.getTime() / 1000)
-      : Math.floor(new Date(position.timestamp).getTime() / 1000);
+    // Timestamp em formato ISO 8601 (formato que o Traccar OSRM aceita)
+    const timestamp = position.timestamp instanceof Date
+      ? position.timestamp.toISOString()
+      : new Date(position.timestamp).toISOString();
 
-    // Velocidade em nós (knots)
+    // Velocidade em nós (knots) - Traccar espera knots
     const speedKmh = position.speed || 0;
     const speedKnots = speedKmh * 0.539957;
 
@@ -374,7 +374,7 @@ export class SyncService {
       id: deviceId,
       lat: position.latitude,
       lon: position.longitude,
-      timestamp: timestampUnix,
+      timestamp: timestamp,
       speed: speedKnots,
       bearing: position.direction || 0,
       valid: true,
