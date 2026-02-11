@@ -76,22 +76,25 @@ export class SyncService {
         const response = await axios.get(url, { headers, timeout: 15000 });
         const batchData = this.normalizeBatchResponse(response.data);
 
-        // Processar os resultados do lote em paralelo
-        const chunkPromises = chunk.map(async (tag) => {
+        // Processar os resultados do lote sequencialmente para não sobrecarregar o Traccar
+        const chunkResults: SyncResult[] = [];
+        for (const tag of chunk) {
           const tagInfo = batchData.find(
             (d: any) => String(d.id) === String(tag.brgpsId),
           );
           if (!tagInfo) {
-            return {
+            chunkResults.push({
               tagId: tag.id,
               success: false,
               error: 'Dispositivo não encontrado na resposta do lote',
-            };
+            });
+            continue;
           }
-          return this.processTagUpdate(tag, tagInfo);
-        });
-
-        const chunkResults = await Promise.all(chunkPromises);
+          const result = await this.processTagUpdate(tag, tagInfo);
+          chunkResults.push(result);
+          // Pequeno delay entre envios para não sobrecarregar o Traccar
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
         results.push(...chunkResults);
       } catch (error: any) {
         this.logger.error(`Erro ao processar lote de tags: ${error.message}`);
@@ -334,48 +337,83 @@ export class SyncService {
   async sendToTraccar(tag: TagData, position: any) {
     const settings = await this.settingsService.getSettings();
     const traccarBaseUrl = settings?.traccarUrl;
-    // O traccarToken pode ser usado se a API exigir no futuro, por enquanto usamos a URL que já contém os parâmetros se configurada assim, ou apenas os básicos.
 
     if (!traccarBaseUrl) {
       this.logger.warn('TRACCAR_BASE_URL não configurado. Pulos envio para Traccar.');
       return;
     }
 
-    let batteryPercentage: number | undefined = undefined;
-    const batteryLevel = position.rawData?.battery;
-    if (batteryLevel !== undefined && batteryLevel !== -1) {
-      if (batteryLevel === 3) batteryPercentage = 100;
-      else if (batteryLevel === 2) batteryPercentage = 70;
-      else if (batteryLevel === 1) batteryPercentage = 35;
-      else if (batteryLevel === 0) batteryPercentage = 10;
+    // Validar coordenadas
+    if (!position.latitude || !position.longitude) {
+      this.logger.warn(`Coordenadas inválidas para tag ${tag.brgpsId}. Pulando envio.`);
+      return;
     }
 
+    // Traccar aceita ID numérico ou string, mas algumas versões têm limitações
+    // Vamos garantir que o ID seja uma string válida
+    const deviceId = String(tag.brgpsId);
+    
+    // Processar bateria - Traccar espera 0-100 ou não enviar
+    let batt: number | undefined = undefined;
+    const batteryLevel = position.rawData?.battery;
+    if (batteryLevel !== undefined && batteryLevel !== -1) {
+      if (batteryLevel === 3) batt = 100;
+      else if (batteryLevel === 2) batt = 70;
+      else if (batteryLevel === 1) batt = 35;
+      else if (batteryLevel === 0) batt = 10;
+    }
+
+    // Timestamp em formato ISO 8601
+    const timestamp = position.timestamp instanceof Date
+      ? position.timestamp.toISOString()
+      : new Date(position.timestamp).toISOString();
+
+    // Velocidade em nós (knots) - Traccar geralmente espera knots
+    // Se a API BRGPS retorna km/h, convertemos para knots (1 km/h = 0.539957 knots)
+    const speedKmh = position.speed || 0;
+    const speedKnots = speedKmh * 0.539957;
+
     const params: any = {
-      id: tag.brgpsId,
+      id: deviceId,
       lat: position.latitude,
       lon: position.longitude,
-      timestamp:
-        position.timestamp instanceof Date
-          ? position.timestamp.toISOString()
-          : new Date(position.timestamp).toISOString(),
-      speed: (position.speed || 0) * 1.852,
+      timestamp: timestamp,
+      speed: speedKnots,
       bearing: position.direction || 0,
-      batt: batteryPercentage,
       valid: true,
     };
 
+    // Só adicionar bateria se tiver valor válido
+    if (batt !== undefined) {
+      params.batt = batt;
+    }
+
     try {
+      this.logger.debug(`Enviando para Traccar: ${JSON.stringify(params)}`);
+      
       const response = await axios.get(traccarBaseUrl, {
         params,
         timeout: 10000,
       });
+      
       this.logger.log(
         `Dados enviados para Traccar com sucesso: Tag ${tag.brgpsId} (Status: ${response.status})`,
       );
     } catch (error: any) {
+      const responseData = error.response?.data;
+      const responseStatus = error.response?.status;
+      const responseStatusText = error.response?.statusText;
+      
       this.logger.error(
         `Falha ao enviar para Traccar (Tag ${tag.brgpsId}): ${error.message}`,
       );
+      this.logger.error(
+        `Detalhes do erro - Status: ${responseStatus} ${responseStatusText}, Resposta: ${JSON.stringify(responseData)}`,
+      );
+      this.logger.error(
+        `Payload enviado: ${JSON.stringify(params)}`,
+      );
+      
       throw error;
     }
   }

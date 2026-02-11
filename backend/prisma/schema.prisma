@@ -52,7 +52,7 @@ model Tag {
 model Position {
   id              String   @id @default(uuid())
   tagId           String   @map("tag_id")
-  tag             Tag      @relation(fields: [tagId], references: [id])
+  tag             Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
   latitude        Float
   longitude       Float
   speed           Float?
@@ -71,7 +71,7 @@ model Position {
 model SyncLog {
   id            String   @id @default(uuid())
   tagId         String?  @map("tag_id")
-  tag           Tag?     @relation(fields: [tagId], references: [id])
+  tag           Tag?     @relation(fields: [tagId], references: [id], onDelete: SetNull)
   status        String // SUCCESS, ERROR
   message       String?
   brgpsResponse Json?    @map("brgps_response")
@@ -85,7 +85,7 @@ model SyncLog {
 model TraccarLog {
   id         String   @id @default(uuid())
   tagId      String   @map("tag_id")
-  tag        Tag      @relation(fields: [tagId], references: [id])
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
   positionId String?  @map("position_id")
   status     String // SUCCESS, ERROR
   payload    Json?
