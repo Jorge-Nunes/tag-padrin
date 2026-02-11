@@ -21,8 +21,8 @@ module.exports = {
     {
       name: 'tag-padrin-frontend',
       cwd: '/opt/tag-padrin/frontend',
-      script: 'serve',
-      args: '-s dist -l 5173',
+      script: 'npx',
+      args: 'serve -s dist -l 5173',
       instances: 1,
       exec_mode: 'fork',
       env: {

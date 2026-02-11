@@ -19,7 +19,7 @@ import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),
-      exclude: ['/api/(.*)'],
+      exclude: ['/api*'],
     }),
     PrismaModule,
     AuthModule,
