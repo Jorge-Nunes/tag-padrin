@@ -387,18 +387,21 @@ export class SyncService {
     try {
       this.logger.debug(`Enviando para Traccar: ${JSON.stringify(params)}`);
       
-      // Construir URL manualmente para garantir codificação correta
-      const url = new URL(traccarBaseUrl);
-      Object.keys(params).forEach(key => {
-        if (params[key] !== undefined) {
-          url.searchParams.append(key, String(params[key]));
-        }
-      });
-      const fullUrl = url.toString();
+      // Construir URL manualmente SEM codificar (igual ao curl)
+      const queryString = Object.keys(params)
+        .filter(key => params[key] !== undefined)
+        .map(key => `${key}=${params[key]}`)
+        .join('&');
+      
+      const fullUrl = `${traccarBaseUrl}?${queryString}`;
       this.logger.debug(`URL completa: ${fullUrl}`);
       
       const response = await axios.get(fullUrl, {
         timeout: 10000,
+        headers: {
+          'User-Agent': 'TagPadrin/1.0',
+          'Accept': '*/*'
+        }
       });
       
       this.logger.log(
@@ -419,22 +422,26 @@ export class SyncService {
         `Payload enviado: ${JSON.stringify(params)}`,
       );
       
-      // Tentar enviar sem o campo batt (pode ser que seja isso)
+      // Tentar enviar sem o campo batt
       if (params.batt !== undefined) {
         this.logger.warn(`Tentando enviar sem campo batt para tag ${tag.brgpsId}...`);
         const paramsWithoutBatt = { ...params };
         delete paramsWithoutBatt.batt;
         
         try {
-          const urlRetry = new URL(traccarBaseUrl);
-          Object.keys(paramsWithoutBatt).forEach(key => {
-            if (paramsWithoutBatt[key] !== undefined) {
-              urlRetry.searchParams.append(key, String(paramsWithoutBatt[key]));
-            }
-          });
+          const queryStringRetry = Object.keys(paramsWithoutBatt)
+            .filter(key => paramsWithoutBatt[key] !== undefined)
+            .map(key => `${key}=${paramsWithoutBatt[key]}`)
+            .join('&');
           
-          const retryResponse = await axios.get(urlRetry.toString(), {
+          const fullUrlRetry = `${traccarBaseUrl}?${queryStringRetry}`;
+          
+          const retryResponse = await axios.get(fullUrlRetry, {
             timeout: 10000,
+            headers: {
+              'User-Agent': 'TagPadrin/1.0',
+              'Accept': '*/*'
+            }
           });
           this.logger.log(
             `Sucesso ao enviar sem batt: Tag ${tag.brgpsId} (Status: ${retryResponse.status})`,
