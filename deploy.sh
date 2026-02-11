@@ -168,17 +168,14 @@ JWT_EXPIRATION=7d
 BRGPS_BASE_URL=http://www.brgps.com/open
 BRGPS_API_TOKEN=seu_token_aqui
 
-# Traccar Integration (substitua com suas credenciais)
-TRACCAR_BASE_URL=http://seu-traccar:5055
-TRACCAR_API_TOKEN=seu_token_opcional
-
 # Frontend
 VITE_API_URL=/api
 EOF
 
     chmod 600 "$ENV_FILE"
     log "Arquivo .env gerado em $ENV_FILE"
-    warn "IMPORTANTE: Edite o arquivo $ENV_FILE e configure seus tokens BRGPS e Traccar"
+    warn "IMPORTANTE: Edite o arquivo $ENV_FILE e configure o token BRGPS"
+    warn "NOTA: A URL do Traccar agora é configurada individualmente em cada dispositivo"
 }
 
 # Clona ou atualiza repositório
@@ -244,15 +241,30 @@ deploy_application() {
     log "Iniciando serviços..."
     docker compose -f docker-compose.prod.yml up -d
     
-    # Aguarda banco estar pronto
-    log "Aguardando banco de dados..."
-    sleep 10
+    # Aguarda banco ficar pronto
+    log "Aguardando banco de dados ficar pronto..."
+    for i in {1..30}; do
+        if docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U postgres > /dev/null 2>&1; then
+            log "Banco de dados pronto!"
+            break
+        fi
+        sleep 2
+    done
+    
+    # Gera Prisma Client
+    log "Gerando Prisma Client..."
+    docker compose -f docker-compose.prod.yml exec -T backend npx prisma generate
     
     # Executa migrações
     log "Executando migrações..."
     docker compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || {
         warn "Migrações falharam. Tentando baseline..."
-        docker compose -f docker-compose.prod.yml exec -T backend npx prisma migrate resolve --applied 20260209024101_add_brgps_base_url || true
+        # Tenta fazer baseline das migrações existentes
+        for migration in $(docker compose -f docker-compose.prod.yml exec -T backend ls -1 /app/prisma/migrations/ 2>/dev/null | grep -E '^[0-9]{14}_' | sort); do
+            migration_name=$(basename "$migration")
+            log "Marcando $migration_name como aplicada..."
+            docker compose -f docker-compose.prod.yml exec -T backend npx prisma migrate resolve --applied "$migration_name" || true
+        done
     }
     
     log "Deploy concluído!"
@@ -312,7 +324,11 @@ check_health() {
     log "  - Reiniciar: docker compose -f docker-compose.prod.yml restart"
     log "  - Status: docker compose -f docker-compose.prod.yml ps"
     echo ""
-    warn "Não esqueça de configurar os tokens no arquivo: $INSTALL_DIR/.env"
+    warn "PRÓXIMOS PASSOS:"
+    warn "1. Configure o token BRGPS no arquivo: $INSTALL_DIR/.env"
+    warn "2. Acesse a aplicação e cadastre seus dispositivos"
+    warn "3. Para cada dispositivo, configure a URL do Traccar individualmente"
+    warn "   (Acesse: Dispositivos > Editar > URL do Traccar)"
 }
 
 # Menu principal

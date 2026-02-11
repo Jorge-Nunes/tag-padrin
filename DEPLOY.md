@@ -42,7 +42,7 @@ O script irá automaticamente:
 - ✅ Verificar saúde da aplicação
 - ✅ Criar backup automático
 
-### 3. Configure as credenciais de integração
+### 3. Configure as credenciais BRGPS
 
 Após o deploy, **é obrigatório** editar o arquivo `/opt/tag-padrin/.env`:
 
@@ -50,16 +50,12 @@ Após o deploy, **é obrigatório** editar o arquivo `/opt/tag-padrin/.env`:
 sudo nano /opt/tag-padrin/.env
 ```
 
-Configure suas credenciais:
+Configure o token BRGPS:
 
 ```env
 # BRGPS Integration (obrigatório)
 BRGPS_BASE_URL=http://www.brgps.com/open
 BRGPS_API_TOKEN=seu_token_real_aqui
-
-# Traccar Integration (opcional)
-TRACCAR_BASE_URL=http://seu-traccar:5055
-TRACCAR_API_TOKEN=seu_token_opcional
 ```
 
 ### 4. Reinicie os serviços
@@ -68,6 +64,26 @@ TRACCAR_API_TOKEN=seu_token_opcional
 cd /opt/tag-padrin
 docker compose -f docker-compose.prod.yml restart
 ```
+
+### 5. Configure a URL do Traccar por dispositivo
+
+Agora cada dispositivo pode enviar para um servidor Traccar diferente:
+
+1. **Acesse a aplicação** em `http://IP_DO_SERVIDOR`
+2. **Faça login** com as credenciais padrão:
+   - Email: `admin@tagpadrin.com`
+   - Senha: `admin123`
+3. **Vá em "Dispositivos"** e clique em **"Novo Dispositivo"**
+4. **Preencha os dados** do dispositivo
+5. **No campo "URL do Traccar"**, informe a URL do servidor:
+   - Ex: `http://acesso.ljlrastreadores.com.br:5055`
+   - Se não informar, o dispositivo não enviará para o Traccar
+6. **Salve** o dispositivo
+
+**Para dispositivos existentes:**
+- Clique no ícone de edição (lápis) do dispositivo
+- Adicione ou altere a URL do Traccar
+- Salve as alterações
 
 ## 📁 Estrutura de Diretórios
 
