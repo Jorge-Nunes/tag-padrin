@@ -387,17 +387,17 @@ export class SyncService {
     try {
       this.logger.debug(`Enviando para Traccar: ${JSON.stringify(params)}`);
       
-      // Construir URL completa para debug
+      // Construir URL manualmente para garantir codificação correta
       const url = new URL(traccarBaseUrl);
       Object.keys(params).forEach(key => {
         if (params[key] !== undefined) {
-          url.searchParams.append(key, params[key]);
+          url.searchParams.append(key, String(params[key]));
         }
       });
-      this.logger.debug(`URL completa: ${url.toString()}`);
+      const fullUrl = url.toString();
+      this.logger.debug(`URL completa: ${fullUrl}`);
       
-      const response = await axios.get(traccarBaseUrl, {
-        params,
+      const response = await axios.get(fullUrl, {
         timeout: 10000,
       });
       
@@ -426,8 +426,14 @@ export class SyncService {
         delete paramsWithoutBatt.batt;
         
         try {
-          const retryResponse = await axios.get(traccarBaseUrl, {
-            params: paramsWithoutBatt,
+          const urlRetry = new URL(traccarBaseUrl);
+          Object.keys(paramsWithoutBatt).forEach(key => {
+            if (paramsWithoutBatt[key] !== undefined) {
+              urlRetry.searchParams.append(key, String(paramsWithoutBatt[key]));
+            }
+          });
+          
+          const retryResponse = await axios.get(urlRetry.toString(), {
             timeout: 10000,
           });
           this.logger.log(
