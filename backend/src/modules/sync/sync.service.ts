@@ -20,6 +20,7 @@ interface TagData {
   id: string;
   brgpsId: string;
   status: string;
+  traccarUrl?: string;
 }
 
 export interface SyncResult {
@@ -53,7 +54,7 @@ export class SyncService {
 
     const tags = (await this.prisma.tag.findMany({
       where: { status: 'ACTIVE' },
-      select: { id: true, brgpsId: true, status: true },
+      select: { id: true, brgpsId: true, status: true, traccarUrl: true },
     })) as TagData[];
 
     this.logger.log(`Iniciando sincronização otimizada de ${tags.length} tags`);
@@ -335,11 +336,11 @@ export class SyncService {
   }
 
   async sendToTraccar(tag: TagData, position: any) {
-    const settings = await this.settingsService.getSettings();
-    const traccarBaseUrl = settings?.traccarUrl;
+    // Usa a URL específica da tag ou não envia
+    const traccarBaseUrl = tag.traccarUrl;
 
     if (!traccarBaseUrl) {
-      this.logger.warn('TRACCAR_BASE_URL não configurado. Pulando envio para Traccar.');
+      this.logger.debug(`Tag ${tag.brgpsId} não possui URL do Traccar configurada. Pulando envio.`);
       return;
     }
 

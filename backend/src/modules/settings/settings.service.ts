@@ -14,7 +14,7 @@ export class SettingsService implements OnModuleInit {
     ) { }
 
     async onModuleInit() {
-        // Garantir que as configurações padrão existam e estejam completas
+        // Garantir que as configurações padrão existam
         const settings = await this.prisma.systemSettings.findUnique({
             where: { id: 'default' },
         });
@@ -26,17 +26,13 @@ export class SettingsService implements OnModuleInit {
                     syncInterval: 60,
                     brgpsBaseUrl: this.configService.get('BRGPS_BASE_URL') || '',
                     brgpsToken: this.configService.get('BRGPS_API_TOKEN') || '',
-                    traccarUrl: this.configService.get('TRACCAR_BASE_URL') || '',
-                    traccarToken: this.configService.get('TRACCAR_API_TOKEN') || '',
                 },
             });
         } else {
-            // Verificar se as URLs de integração estão populadas (migração de segurança)
+            // Verificar se as URLs de integração estão populadas
             const updates: any = {};
             if (!settings.brgpsBaseUrl) updates.brgpsBaseUrl = this.configService.get('BRGPS_BASE_URL') || '';
             if (!settings.brgpsToken) updates.brgpsToken = this.configService.get('BRGPS_API_TOKEN') || '';
-            if (!settings.traccarUrl) updates.traccarUrl = this.configService.get('TRACCAR_BASE_URL') || '';
-            if (!settings.traccarToken) updates.traccarToken = this.configService.get('TRACCAR_API_TOKEN') || '';
 
             if (Object.keys(updates).length > 0) {
                 await this.prisma.systemSettings.update({
@@ -57,8 +53,6 @@ export class SettingsService implements OnModuleInit {
         syncInterval?: number;
         brgpsBaseUrl?: string;
         brgpsToken?: string;
-        traccarUrl?: string;
-        traccarToken?: string;
     }) {
         const settings = await this.prisma.systemSettings.update({
             where: { id: 'default' },

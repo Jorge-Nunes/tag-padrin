@@ -31,6 +31,7 @@ model Tag {
   description       String?
   status            String       @default("ACTIVE")
   isActive          Boolean      @default(true)
+  traccarUrl        String?      @map("traccar_url")
   lastLatitude      Float?       @map("last_latitude")
   lastLongitude     Float?       @map("last_longitude")
   lastSpeed         Float?       @map("last_speed")
@@ -101,8 +102,6 @@ model SystemSettings {
   syncInterval  Int      @default(60) @map("sync_interval")
   brgpsBaseUrl  String?  @map("brgps_base_url")
   brgpsToken    String?  @map("brgps_token")
-  traccarUrl    String?  @map("traccar_url")
-  traccarToken  String?  @map("traccar_token")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@map("settings")

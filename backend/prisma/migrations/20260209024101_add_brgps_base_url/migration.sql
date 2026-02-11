@@ -13,39 +13,39 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "positions" DROP CONSTRAINT "positions_tag_id_fkey";
+ALTER TABLE "positions" DROP CONSTRAINT IF EXISTS "positions_tag_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sync_logs" DROP CONSTRAINT "sync_logs_tag_id_fkey";
+ALTER TABLE "sync_logs" DROP CONSTRAINT IF EXISTS "sync_logs_tag_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "traccar_logs" DROP CONSTRAINT "traccar_logs_tag_id_fkey";
+ALTER TABLE "traccar_logs" DROP CONSTRAINT IF EXISTS "traccar_logs_tag_id_fkey";
 
 -- DropIndex
-DROP INDEX "positions_tag_id_idx";
+DROP INDEX IF EXISTS "positions_tag_id_idx";
 
 -- DropIndex
-DROP INDEX "positions_timestamp_idx";
+DROP INDEX IF EXISTS "positions_timestamp_idx";
 
 -- DropIndex
-DROP INDEX "sync_logs_created_at_idx";
+DROP INDEX IF EXISTS "sync_logs_created_at_idx";
 
 -- DropIndex
-DROP INDEX "sync_logs_tag_id_idx";
+DROP INDEX IF EXISTS "sync_logs_tag_id_idx";
 
 -- DropIndex
-DROP INDEX "traccar_logs_created_at_idx";
+DROP INDEX IF EXISTS "traccar_logs_created_at_idx";
 
 -- DropIndex
-DROP INDEX "traccar_logs_tag_id_idx";
+DROP INDEX IF EXISTS "traccar_logs_tag_id_idx";
 
 -- AlterTable
-ALTER TABLE "positions" DROP COLUMN "altitude",
-DROP COLUMN "battery",
-DROP COLUMN "gps_signal",
-DROP COLUMN "gsm_signal",
-DROP COLUMN "mileage",
-ADD COLUMN     "course" DOUBLE PRECISION;
+ALTER TABLE "positions" DROP COLUMN IF EXISTS "altitude",
+DROP COLUMN IF EXISTS "battery",
+DROP COLUMN IF EXISTS "gps_signal",
+DROP COLUMN IF EXISTS "gsm_signal",
+DROP COLUMN IF EXISTS "mileage",
+ADD COLUMN IF NOT EXISTS "course" DOUBLE PRECISION;
 
 -- AlterTable
 ALTER TABLE "settings" ALTER COLUMN "id" SET DEFAULT 'default',
@@ -55,45 +55,45 @@ ALTER COLUMN "traccar_token" DROP NOT NULL;
 
 -- AlterTable
 ALTER TABLE "sync_logs" ALTER COLUMN "tag_id" DROP NOT NULL,
-DROP COLUMN "status",
-ADD COLUMN     "status" TEXT NOT NULL;
+DROP COLUMN IF EXISTS "status",
+ADD COLUMN "status" TEXT NOT NULL DEFAULT 'SUCCESS';
 
 -- AlterTable
-ALTER TABLE "tags" DROP COLUMN "imei";
+ALTER TABLE "tags" DROP COLUMN IF EXISTS "imei";
 
 -- AlterTable
-ALTER TABLE "traccar_logs" DROP COLUMN "status",
-ADD COLUMN     "status" TEXT NOT NULL,
+ALTER TABLE "traccar_logs" DROP COLUMN IF EXISTS "status",
+ADD COLUMN "status" TEXT NOT NULL DEFAULT 'SUCCESS',
 ALTER COLUMN "payload" DROP NOT NULL,
-DROP COLUMN "response",
-ADD COLUMN     "response" JSONB;
+DROP COLUMN IF EXISTS "response",
+ADD COLUMN "response" JSONB;
 
 -- AlterTable
 ALTER TABLE "users" ALTER COLUMN "name" DROP NOT NULL;
 
 -- DropEnum
-DROP TYPE "SyncStatus";
+DROP TYPE IF EXISTS "SyncStatus";
 
 -- CreateIndex
-CREATE INDEX "positions_tag_id_timestamp_idx" ON "positions"("tag_id", "timestamp");
+CREATE INDEX IF NOT EXISTS "positions_tag_id_timestamp_idx" ON "positions"("tag_id", "timestamp");
 
 -- CreateIndex
-CREATE INDEX "positions_created_at_idx" ON "positions"("created_at");
+CREATE INDEX IF NOT EXISTS "positions_created_at_idx" ON "positions"("created_at");
 
 -- CreateIndex
-CREATE INDEX "sync_logs_tag_id_created_at_idx" ON "sync_logs"("tag_id", "created_at");
+CREATE INDEX IF NOT EXISTS "sync_logs_tag_id_created_at_idx" ON "sync_logs"("tag_id", "created_at");
 
 -- CreateIndex
-CREATE INDEX "sync_logs_status_created_at_idx" ON "sync_logs"("status", "created_at");
+CREATE INDEX IF NOT EXISTS "sync_logs_status_created_at_idx" ON "sync_logs"("status", "created_at");
 
 -- CreateIndex
-CREATE INDEX "tags_last_sync_at_idx" ON "tags"("last_sync_at");
+CREATE INDEX IF NOT EXISTS "tags_last_sync_at_idx" ON "tags"("last_sync_at");
 
 -- CreateIndex
-CREATE INDEX "tags_status_idx" ON "tags"("status");
+CREATE INDEX IF NOT EXISTS "tags_status_idx" ON "tags"("status");
 
 -- CreateIndex
-CREATE INDEX "traccar_logs_tag_id_created_at_idx" ON "traccar_logs"("tag_id", "created_at");
+CREATE INDEX IF NOT EXISTS "traccar_logs_tag_id_created_at_idx" ON "traccar_logs"("tag_id", "created_at");
 
 -- AddForeignKey
 ALTER TABLE "positions" ADD CONSTRAINT "positions_tag_id_fkey" FOREIGN KEY ("tag_id") REFERENCES "tags"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
