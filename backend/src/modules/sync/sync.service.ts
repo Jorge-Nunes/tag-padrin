@@ -334,47 +334,6 @@ export class SyncService {
     }
   }
 
-  private async ensureDeviceInTraccar(tag: TagData, traccarApiUrl: string, traccarToken: string): Promise<boolean> {
-    try {
-      // Verificar se o dispositivo já existe no Traccar
-      const checkResponse = await axios.get(`${traccarApiUrl}/devices`, {
-        params: { uniqueId: tag.brgpsId },
-        headers: traccarToken ? { Authorization: `Bearer ${traccarToken}` } : undefined,
-        timeout: 5000,
-      });
-
-      if (checkResponse.data && checkResponse.data.length > 0) {
-        this.logger.debug(`Dispositivo ${tag.brgpsId} já existe no Traccar`);
-        return true;
-      }
-
-      // Criar dispositivo no Traccar
-      this.logger.log(`Criando dispositivo ${tag.brgpsId} no Traccar...`);
-      const createResponse = await axios.post(
-        `${traccarApiUrl}/devices`,
-        {
-          name: tag.name || `Tag ${tag.brgpsId}`,
-          uniqueId: tag.brgpsId,
-          status: 'active',
-        },
-        {
-          headers: traccarToken ? { Authorization: `Bearer ${traccarToken}` } : undefined,
-          timeout: 5000,
-        }
-      );
-
-      if (createResponse.status === 200 || createResponse.status === 201) {
-        this.logger.log(`Dispositivo ${tag.brgpsId} criado com sucesso no Traccar`);
-        return true;
-      }
-
-      return false;
-    } catch (error: any) {
-      this.logger.error(`Erro ao verificar/criar dispositivo no Traccar: ${error.message}`);
-      return false;
-    }
-  }
-
   async sendToTraccar(tag: TagData, position: any) {
     const settings = await this.settingsService.getSettings();
     const traccarBaseUrl = settings?.traccarUrl;
@@ -390,11 +349,9 @@ export class SyncService {
       return;
     }
 
-    // Traccar aceita ID numérico ou string, mas algumas versões têm limitações
-    // Vamos garantir que o ID seja uma string válida
     const deviceId = String(tag.brgpsId);
     
-    // Processar bateria - Traccar espera 0-100 ou não enviar
+    // Processar bateria
     let batt: number | undefined = undefined;
     const batteryLevel = position.rawData?.battery;
     if (batteryLevel !== undefined && batteryLevel !== -1) {
@@ -404,13 +361,12 @@ export class SyncService {
       else if (batteryLevel === 0) batt = 10;
     }
 
-    // Timestamp em formato ISO 8601
-    const timestamp = position.timestamp instanceof Date
-      ? position.timestamp.toISOString()
-      : new Date(position.timestamp).toISOString();
+    // Timestamp em formato Unix (segundos) - formato mais compatível com OSRM
+    const timestampUnix = position.timestamp instanceof Date
+      ? Math.floor(position.timestamp.getTime() / 1000)
+      : Math.floor(new Date(position.timestamp).getTime() / 1000);
 
-    // Velocidade em nós (knots) - Traccar geralmente espera knots
-    // Se a API BRGPS retorna km/h, convertemos para knots (1 km/h = 0.539957 knots)
+    // Velocidade em nós (knots)
     const speedKmh = position.speed || 0;
     const speedKnots = speedKmh * 0.539957;
 
@@ -418,13 +374,12 @@ export class SyncService {
       id: deviceId,
       lat: position.latitude,
       lon: position.longitude,
-      timestamp: timestamp,
+      timestamp: timestampUnix,
       speed: speedKnots,
       bearing: position.direction || 0,
       valid: true,
     };
 
-    // Só adicionar bateria se tiver valor válido
     if (batt !== undefined) {
       params.batt = batt;
     }
@@ -444,37 +399,6 @@ export class SyncService {
       const responseData = error.response?.data;
       const responseStatus = error.response?.status;
       const responseStatusText = error.response?.statusText;
-      
-      // Se erro 400, pode ser que o dispositivo não esteja cadastrado
-      if (responseStatus === 400) {
-        this.logger.warn(`Dispositivo ${tag.brgpsId} retornou erro 400. Verificando se precisa ser cadastrado...`);
-        
-        // Tentar cadastrar o dispositivo se tivermos a API REST configurada
-        const traccarApiUrl = settings?.traccarUrl?.replace(/\/+$/, '').replace(/:\d+/, ':8082'); // Assumir API na porta 8082
-        const traccarToken = settings?.traccarToken;
-        
-        if (traccarApiUrl && traccarToken) {
-          const registered = await this.ensureDeviceInTraccar(tag, traccarApiUrl, traccarToken);
-          if (registered) {
-            this.logger.log(`Dispositivo ${tag.brgpsId} registrado. Tentando enviar novamente...`);
-            // Tentar enviar novamente
-            try {
-              const retryResponse = await axios.get(traccarBaseUrl, {
-                params,
-                timeout: 10000,
-              });
-              this.logger.log(
-                `Dados enviados para Traccar com sucesso (2ª tentativa): Tag ${tag.brgpsId} (Status: ${retryResponse.status})`,
-              );
-              return;
-            } catch (retryError: any) {
-              this.logger.error(`Falha na 2ª tentativa: ${retryError.message}`);
-            }
-          }
-        } else {
-          this.logger.error(`API REST do Traccar não configurada. Configure TRACCAR_URL (porta 8082) e TRACCAR_TOKEN para cadastrar dispositivos automaticamente.`);
-        }
-      }
       
       this.logger.error(
         `Falha ao enviar para Traccar (Tag ${tag.brgpsId}): ${error.message}`,
