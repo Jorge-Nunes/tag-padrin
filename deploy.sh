@@ -234,15 +234,15 @@ deploy_application() {
     
     # Para containers antigos
     log "Parando containers antigos..."
-    docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+    docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
     
     # Build das imagens
     log "Buildando imagens Docker..."
-    docker-compose -f docker-compose.prod.yml build --no-cache
+    docker compose -f docker-compose.prod.yml build --no-cache
     
     # Inicia serviços
     log "Iniciando serviços..."
-    docker-compose -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.prod.yml up -d
     
     # Aguarda banco estar pronto
     log "Aguardando banco de dados..."
@@ -250,9 +250,9 @@ deploy_application() {
     
     # Executa migrações
     log "Executando migrações..."
-    docker-compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || {
+    docker compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || {
         warn "Migrações falharam. Tentando baseline..."
-        docker-compose -f docker-compose.prod.yml exec -T backend npx prisma migrate resolve --applied 20260209024101_add_brgps_base_url || true
+        docker compose -f docker-compose.prod.yml exec -T backend npx prisma migrate resolve --applied 20260209024101_add_brgps_base_url || true
     }
     
     log "Deploy concluído!"
@@ -293,7 +293,7 @@ check_health() {
     else
         warn "Health check retornou status: $HTTP_STATUS"
         warn "Verificando logs..."
-        docker-compose -f docker-compose.prod.yml logs --tail=50 api
+        docker compose -f docker-compose.prod.yml logs --tail=50 api
     fi
     
     # Mostra status final
@@ -307,10 +307,10 @@ check_health() {
     log "  - API: http://$(hostname -I | awk '{print $1}')/api"
     echo ""
     log "Comandos úteis:"
-    log "  - Ver logs: docker-compose -f docker-compose.prod.yml logs -f"
-    log "  - Parar: docker-compose -f docker-compose.prod.yml down"
-    log "  - Reiniciar: docker-compose -f docker-compose.prod.yml restart"
-    log "  - Status: docker-compose -f docker-compose.prod.yml ps"
+    log "  - Ver logs: docker compose -f docker-compose.prod.yml logs -f"
+    log "  - Parar: docker compose -f docker-compose.prod.yml down"
+    log "  - Reiniciar: docker compose -f docker-compose.prod.yml restart"
+    log "  - Status: docker compose -f docker-compose.prod.yml ps"
     echo ""
     warn "Não esqueça de configurar os tokens no arquivo: $INSTALL_DIR/.env"
 }

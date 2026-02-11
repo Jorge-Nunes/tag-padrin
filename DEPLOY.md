@@ -66,7 +66,7 @@ TRACCAR_API_TOKEN=seu_token_opcional
 
 ```bash
 cd /opt/tag-padrin
-docker-compose -f docker-compose.prod.yml restart
+docker compose -f docker-compose.prod.yml restart
 ```
 
 ## 📁 Estrutura de Diretórios
@@ -84,13 +84,13 @@ docker-compose -f docker-compose.prod.yml restart
 cd /opt/tag-padrin
 
 # Todas as aplicações
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f
 
 # Apenas API
-docker-compose -f docker-compose.prod.yml logs -f api
+docker compose -f docker-compose.prod.yml logs -f api
 
 # Apenas banco de dados
-docker-compose -f docker-compose.prod.yml logs -f postgres
+docker compose -f docker-compose.prod.yml logs -f postgres
 ```
 
 ### Gerenciar serviços
@@ -98,13 +98,13 @@ docker-compose -f docker-compose.prod.yml logs -f postgres
 cd /opt/tag-padrin
 
 # Parar todos os serviços
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 
 # Reiniciar
-docker-compose -f docker-compose.prod.yml restart
+docker compose -f docker-compose.prod.yml restart
 
 # Status dos containers
-docker-compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml ps
 ```
 
 ### Backup manual
@@ -126,7 +126,7 @@ docker exec -it tag-padrin-db psql -U postgres tagpadrin
 ### Executar migrações manualmente
 ```bash
 cd /opt/tag-padrin
-docker-compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
 ```
 
 ## 🔒 Segurança
@@ -154,37 +154,37 @@ Portas utilizadas:
 ```bash
 # Rebuildar imagens sem cache
 cd /opt/tag-padrin
-docker-compose -f docker-compose.prod.yml build --no-cache
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### Erro de permissão no banco
 ```bash
 # Corrigir permissões do volume
 cd /opt/tag-padrin
-docker-compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml down
 docker volume rm tag-padrin_postgres_data
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ### API não responde
 ```bash
 # Verificar logs
 cd /opt/tag-padrin
-docker-compose -f docker-compose.prod.yml logs api | tail -50
+docker compose -f docker-compose.prod.yml logs api | tail -50
 
 # Verificar se migrações foram aplicadas
-docker-compose -f docker-compose.prod.yml exec backend npx prisma migrate status
+docker compose -f docker-compose.prod.yml exec backend npx prisma migrate status
 ```
 
 ### Erro de migração
 ```bash
 # Resetar migrações (CUIDADO: perde dados)
 cd /opt/tag-padrin
-docker-compose -f docker-compose.prod.yml exec backend npx prisma migrate reset --force
+docker compose -f docker-compose.prod.yml exec backend npx prisma migrate reset --force
 
 # Ou resolver conflito específico
-docker-compose -f docker-compose.prod.yml exec backend npx prisma migrate resolve --applied NOME_DA_MIGRACAO
+docker compose -f docker-compose.prod.yml exec backend npx prisma migrate resolve --applied NOME_DA_MIGRACAO
 ```
 
 ### Container do banco não inicia
@@ -216,7 +216,7 @@ Em caso de problemas:
 3. Verifique logs em tempo real: 
    ```bash
    cd /opt/tag-padrin
-   docker-compose -f docker-compose.prod.yml logs -f
+   docker compose -f docker-compose.prod.yml logs -f
    ```
 
 ## 📝 Notas Importantes
@@ -260,8 +260,8 @@ cp .env.example .env
 nano .env
 
 # 4. Subir aplicação
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 
 # 5. Executar migrações
-docker-compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
 ```
