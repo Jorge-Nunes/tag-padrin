@@ -24,4 +24,8 @@ export class UpdateTagDto {
     @IsOptional()
     @IsString()
     imei?: string;
+
+    @IsOptional()
+    @IsString()
+    traccarUrl?: string;
 }

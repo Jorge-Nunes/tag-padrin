@@ -24,4 +24,8 @@ export class CreateTagDto {
     @IsOptional()
     @IsString()
     imei?: string;
+
+    @IsOptional()
+    @IsString()
+    traccarUrl?: string;
 }
