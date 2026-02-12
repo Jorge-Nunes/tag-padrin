@@ -19,6 +19,20 @@ interface Tag {
   lastSyncAt?: string;
 }
 
+const INITIAL_FORM_DATA = {
+  brgpsId: '',
+  name: '',
+  description: '',
+  status: 'ACTIVE',
+  traccarUrl: '',
+};
+
+const ITEMS_PER_PAGE = 10;
+
+function openGoogleMaps(latitude: number, longitude: number): void {
+  window.open(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`, '_blank');
+}
+
 export function Tags() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,19 +40,11 @@ export function Tags() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
 
-  // Filtros e Paginação
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
-  const [formData, setFormData] = useState({
-    brgpsId: '',
-    name: '',
-    description: '',
-    status: 'ACTIVE',
-    traccarUrl: '',
-  });
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const { showAlert, showConfirm } = useModalStore();
 
   useEffect(() => {
@@ -56,7 +62,7 @@ export function Tags() {
     }
   };
 
-  // Lógica de Filtro e Pesquisa
+
   const filteredTags = useMemo(() => {
     return tags.filter(tag => {
       const matchesSearch =
@@ -70,14 +76,14 @@ export function Tags() {
     });
   }, [tags, searchTerm, statusFilter]);
 
-  // Lógica de Paginação
-  const totalPages = Math.ceil(filteredTags.length / itemsPerPage);
+
+  const totalPages = Math.ceil(filteredTags.length / ITEMS_PER_PAGE);
   const paginatedTags = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredTags.slice(startIndex, startIndex + itemsPerPage);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredTags.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredTags, currentPage]);
 
-  // Resetar página ao filtrar
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
@@ -94,7 +100,7 @@ export function Tags() {
       }
       setShowModal(false);
       setEditingTag(null);
-      setFormData({ brgpsId: '', name: '', description: '', status: 'ACTIVE', traccarUrl: '' });
+      setFormData(INITIAL_FORM_DATA);
       loadTags();
     } catch (error: any) {
       console.error('Erro ao salvar tag:', error);
@@ -158,7 +164,7 @@ export function Tags() {
             <Search className="w-5 h-5 mr-2" />
             Importar
           </Button>
-          <Button onClick={() => { setEditingTag(null); setFormData({ brgpsId: '', name: '', description: '', status: 'ACTIVE', traccarUrl: '' }); setShowModal(true); }} variant="strong" size="md">
+          <Button onClick={() => { setEditingTag(null); setFormData(INITIAL_FORM_DATA); setShowModal(true); }} variant="strong" size="md">
             <Plus className="w-5 h-5 mr-2" />
             Novo Dispositivo
           </Button>
@@ -216,7 +222,7 @@ export function Tags() {
                   <td className="px-6 py-5">
                     <div className="flex items-center space-x-3 text-left">
                       <div
-                        onClick={() => tag.lastLatitude && tag.lastLongitude && window.open(`https://www.google.com/maps/search/?api=1&query=${tag.lastLatitude},${tag.lastLongitude}`, '_blank')}
+                        onClick={() => tag.lastLatitude && tag.lastLongitude && openGoogleMaps(tag.lastLatitude, tag.lastLongitude)}
                         className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-sm transition-all duration-300 ${tag.lastLatitude && tag.lastLongitude
                           ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:scale-110 active:scale-95'
                           : 'bg-gray-50 dark:bg-slate-800 text-gray-400 cursor-not-allowed opacity-50'
@@ -250,7 +256,7 @@ export function Tags() {
                   <td className="px-6 py-5 text-left">
                     {tag.lastLatitude && tag.lastLongitude ? (
                       <div
-                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${tag.lastLatitude},${tag.lastLongitude}`, '_blank')}
+                        onClick={() => openGoogleMaps(tag.lastLatitude!, tag.lastLongitude!)}
                         className="flex flex-col cursor-pointer hover:text-blue-600 transition-colors group/pos"
                         title="Ver no Google Maps"
                       >
@@ -305,7 +311,7 @@ export function Tags() {
         {filteredTags.length > 0 && (
           <div className="px-6 py-4 bg-gray-50/50 dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-              Mostrando <span className="text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</span> a <span className="text-gray-900 dark:text-white">{Math.min(currentPage * itemsPerPage, filteredTags.length)}</span> de <span className="text-gray-900 dark:text-white">{filteredTags.length}</span> registros
+              Mostrando <span className="text-gray-900 dark:text-white">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> a <span className="text-gray-900 dark:text-white">{Math.min(currentPage * ITEMS_PER_PAGE, filteredTags.length)}</span> de <span className="text-gray-900 dark:text-white">{filteredTags.length}</span> registros
             </p>
 
             <div className="flex items-center space-x-2">

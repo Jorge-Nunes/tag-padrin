@@ -3,6 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { PrismaService } from '../../prisma/prisma.service';
 
+const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+const TRACCAR_TIMEOUT_MS = 10000;
+
 @Injectable()
 export class TraccarService {
   private readonly logger = new Logger(TraccarService.name);
@@ -12,22 +15,16 @@ export class TraccarService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.traccarUrl = this.configService.get('TRACCAR_BASE_URL') || 'http://localhost:5055';
+    this.traccarUrl =
+      this.configService.get('TRACCAR_BASE_URL') || 'http://localhost:5055';
   }
 
   async sendPosition(position: any, tag: any) {
-    // Mapear nível de bateria (0-3) para porcentagem (0-100)
-    let batteryPercentage: number | undefined = undefined;
-    const batteryLevel = position.rawData?.battery;
-    if (batteryLevel !== undefined && batteryLevel !== -1) {
-      if (batteryLevel === 3) batteryPercentage = 100;
-      else if (batteryLevel === 2) batteryPercentage = 70;
-      else if (batteryLevel === 1) batteryPercentage = 35;
-      else if (batteryLevel === 0) batteryPercentage = 10;
-    }
+    const batteryPercentage = this.calculateBatteryPercentage(
+      position.rawData?.battery,
+    );
 
     try {
-      // Converter para formato OSMAnd
       const payload = {
         id: tag.brgpsId,
         lat: position.latitude,
@@ -40,10 +37,9 @@ export class TraccarService {
 
       this.logger.debug('Enviando para Traccar:', payload);
 
-      // Enviar para Traccar
       const response = await axios.get(this.traccarUrl, {
         params: payload,
-        timeout: 10000,
+        timeout: TRACCAR_TIMEOUT_MS,
       });
 
       // Atualizar tag
@@ -66,7 +62,6 @@ export class TraccarService {
       this.logger.log(`Posicao enviada ao Traccar para tag ${tag.brgpsId}`);
 
       return { success: true, payload };
-
     } catch (error) {
       this.logger.error(`Erro ao enviar para Traccar: ${error.message}`);
 
@@ -85,12 +80,11 @@ export class TraccarService {
     }
   }
 
-  async sendPendingPositions() {
-    // Buscar posições não enviadas (últimas 24h)
+  async sendUnsentPositions() {
     const positions = await this.prisma.position.findMany({
       where: {
         createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          gte: new Date(Date.now() - TWENTY_FOUR_HOURS_MS),
         },
       },
       include: { tag: true },
@@ -117,5 +111,18 @@ export class TraccarService {
       take: limit,
       include: { tag: true },
     });
+  }
+
+  private calculateBatteryPercentage(
+    batteryLevel: number | undefined,
+  ): number | undefined {
+    if (batteryLevel === undefined || batteryLevel === -1) {
+      return undefined;
+    }
+    if (batteryLevel === 3) return 100;
+    if (batteryLevel === 2) return 70;
+    if (batteryLevel === 1) return 35;
+    if (batteryLevel === 0) return 10;
+    return undefined;
   }
 }

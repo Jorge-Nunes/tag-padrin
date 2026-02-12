@@ -38,7 +38,7 @@ export class SyncService {
     private prisma: PrismaService,
     private settingsService: SettingsService,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   async syncAllTags(): Promise<SyncResult[]> {
     const settings = await this.settingsService.getSettings();
@@ -59,7 +59,7 @@ export class SyncService {
 
     this.logger.log(`Iniciando sincronização otimizada de ${tags.length} tags`);
 
-    const chunkSize = 20; // Aumentado para melhor performance
+    const chunkSize = 20;
     const results: SyncResult[] = [];
 
     for (let i = 0; i < tags.length; i += chunkSize) {
@@ -77,7 +77,6 @@ export class SyncService {
         const response = await axios.get(url, { headers, timeout: 15000 });
         const batchData = this.normalizeBatchResponse(response.data);
 
-        // Processar os resultados do lote sequencialmente para não sobrecarregar o Traccar
         const chunkResults: SyncResult[] = [];
         for (const tag of chunk) {
           const tagInfo = batchData.find(
@@ -93,13 +92,11 @@ export class SyncService {
           }
           const result = await this.processTagUpdate(tag, tagInfo);
           chunkResults.push(result);
-          // Pequeno delay entre envios para não sobrecarregar o Traccar
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
         results.push(...chunkResults);
       } catch (error: any) {
         this.logger.error(`Erro ao processar lote de tags: ${error.message}`);
-        // Em caso de erro no lote, tentamos registrar o erro para todas as tags do lote
         results.push(
           ...chunk.map((t) => ({
             tagId: t.id,
@@ -120,18 +117,26 @@ export class SyncService {
     return [];
   }
 
-  private async processTagUpdate(tag: TagData, positionData: BRGPSPosition): Promise<SyncResult> {
+  private async processTagUpdate(
+    tag: TagData,
+    positionData: BRGPSPosition,
+  ): Promise<SyncResult> {
     try {
       if (!positionData || (!positionData.lat && !positionData.latitude)) {
         throw new Error('Dados de posição inválidos');
       }
 
       const latRaw = positionData.lat || positionData.latitude;
-      const lonRaw = positionData.lon || positionData.lng || positionData.longitude;
+      const lonRaw =
+        positionData.lon || positionData.lng || positionData.longitude;
 
-      const lat = typeof latRaw === 'string' ? parseFloat(latRaw) : latRaw as number;
-      const lon = typeof lonRaw === 'string' ? parseFloat(lonRaw) : lonRaw as number;
-      const timestampMs = positionData.timestamp ? positionData.timestamp * 1000 : Date.now();
+      const lat =
+        typeof latRaw === 'string' ? parseFloat(latRaw) : (latRaw as number);
+      const lon =
+        typeof lonRaw === 'string' ? parseFloat(lonRaw) : (lonRaw as number);
+      const timestampMs = positionData.timestamp
+        ? positionData.timestamp * 1000
+        : Date.now();
 
       // Transação para consistência e performance
       const [position] = await this.prisma.$transaction([
@@ -231,7 +236,8 @@ export class SyncService {
       ) {
         if (response.data.statusCode && response.data.statusCode !== 200) {
           throw new Error(
-            `Erro na API BRGPS: ${response.data.message || 'Status ' + response.data.statusCode
+            `Erro na API BRGPS: ${
+              response.data.message || 'Status ' + response.data.statusCode
             }`,
           );
         }
@@ -252,7 +258,8 @@ export class SyncService {
 
       // Normalizar campos
       const latRaw = positionData.lat || positionData.latitude;
-      const lonRaw = positionData.lon || positionData.lng || positionData.longitude;
+      const lonRaw =
+        positionData.lon || positionData.lng || positionData.longitude;
 
       if (latRaw === undefined || lonRaw === undefined) {
         return {
@@ -314,7 +321,9 @@ export class SyncService {
       try {
         await this.sendToTraccar(tag, position);
       } catch (traccarError) {
-        this.logger.error(`Erro ao enviar para Traccar: ${traccarError.message}`);
+        this.logger.error(
+          `Erro ao enviar para Traccar: ${traccarError.message}`,
+        );
       }
 
       return {
@@ -336,125 +345,143 @@ export class SyncService {
   }
 
   async sendToTraccar(tag: TagData, position: any) {
-    // Usa a URL específica da tag ou não envia
     const traccarBaseUrl = tag.traccarUrl;
 
     if (!traccarBaseUrl) {
-      this.logger.debug(`Tag ${tag.brgpsId} não possui URL do Traccar configurada. Pulando envio.`);
+      this.logger.debug(
+        `Tag ${tag.brgpsId} não possui URL do Traccar configurada. Pulando envio.`,
+      );
       return;
     }
 
     // Validar coordenadas
     if (!position.latitude || !position.longitude) {
-      this.logger.warn(`Coordenadas inválidas para tag ${tag.brgpsId}. Pulando envio.`);
+      this.logger.warn(
+        `Coordenadas inválidas para tag ${tag.brgpsId}. Pulando envio.`,
+      );
       return;
     }
 
     const deviceId = String(tag.brgpsId);
-    
-    // Processar bateria
-    let batt: number | undefined = undefined;
-    const batteryLevel = position.rawData?.battery;
-    if (batteryLevel !== undefined && batteryLevel !== -1) {
-      if (batteryLevel === 3) batt = 100;
-      else if (batteryLevel === 2) batt = 70;
-      else if (batteryLevel === 1) batt = 35;
-      else if (batteryLevel === 0) batt = 10;
-    }
-
-    // Timestamp em formato ISO 8601 (formato que o Traccar OSRM aceita)
-    const timestamp = position.timestamp instanceof Date
-      ? position.timestamp.toISOString()
-      : new Date(position.timestamp).toISOString();
-
-    // Velocidade em nós (knots) - Traccar espera knots
-    const speedKmh = position.speed || 0;
-    const speedKnots = speedKmh * 0.539957;
+    const batteryLevel = this.calculateBatteryPercentage(
+      position.rawData?.battery,
+    );
+    const timestamp =
+      position.timestamp instanceof Date
+        ? position.timestamp.toISOString()
+        : new Date(position.timestamp).toISOString();
+    const speedKnots = (position.speed || 0) * 0.539957;
 
     const params: any = {
       id: deviceId,
       lat: position.latitude,
       lon: position.longitude,
-      timestamp: timestamp,
+      timestamp,
       speed: speedKnots,
       bearing: position.direction || 0,
       valid: true,
     };
 
-    if (batt !== undefined) {
-      params.batt = batt;
+    if (batteryLevel !== undefined) {
+      params.batt = batteryLevel;
     }
 
     try {
       this.logger.debug(`Enviando para Traccar: ${JSON.stringify(params)}`);
-      
-      // Construir URL manualmente SEM codificar (igual ao curl)
       const queryString = Object.keys(params)
-        .filter(key => params[key] !== undefined)
-        .map(key => `${key}=${params[key]}`)
+        .filter((key) => params[key] !== undefined)
+        .map((key) => `${key}=${params[key]}`)
         .join('&');
-      
+
       const fullUrl = `${traccarBaseUrl}?${queryString}`;
       this.logger.debug(`URL completa: ${fullUrl}`);
-      
+
       const response = await axios.get(fullUrl, {
         timeout: 10000,
         headers: {
           'User-Agent': 'TagPadrin/1.0',
-          'Accept': '*/*'
-        }
+          Accept: '*/*',
+        },
       });
-      
+
       this.logger.log(
         `Dados enviados para Traccar com sucesso: Tag ${tag.brgpsId} (Status: ${response.status})`,
       );
     } catch (error: any) {
-      const responseData = error.response?.data;
-      const responseStatus = error.response?.status;
-      const responseStatusText = error.response?.statusText;
-      
-      this.logger.error(
-        `Falha ao enviar para Traccar (Tag ${tag.brgpsId}): ${error.message}`,
-      );
-      this.logger.error(
-        `Detalhes do erro - Status: ${responseStatus} ${responseStatusText}, Resposta: ${JSON.stringify(responseData)}`,
-      );
-      this.logger.error(
-        `Payload enviado: ${JSON.stringify(params)}`,
-      );
-      
-      // Tentar enviar sem o campo batt
-      if (params.batt !== undefined) {
-        this.logger.warn(`Tentando enviar sem campo batt para tag ${tag.brgpsId}...`);
-        const paramsWithoutBatt = { ...params };
-        delete paramsWithoutBatt.batt;
-        
-        try {
-          const queryStringRetry = Object.keys(paramsWithoutBatt)
-            .filter(key => paramsWithoutBatt[key] !== undefined)
-            .map(key => `${key}=${paramsWithoutBatt[key]}`)
-            .join('&');
-          
-          const fullUrlRetry = `${traccarBaseUrl}?${queryStringRetry}`;
-          
-          const retryResponse = await axios.get(fullUrlRetry, {
-            timeout: 10000,
-            headers: {
-              'User-Agent': 'TagPadrin/1.0',
-              'Accept': '*/*'
-            }
-          });
-          this.logger.log(
-            `Sucesso ao enviar sem batt: Tag ${tag.brgpsId} (Status: ${retryResponse.status})`,
-          );
-          return;
-        } catch (retryError: any) {
-          this.logger.error(`Falha sem batt também: ${retryError.message}`);
-        }
-      }
-      
-      throw error;
+      await this.handleTraccarError(error, tag, params, traccarBaseUrl);
     }
+  }
+
+  private async handleTraccarError(
+    error: any,
+    tag: TagData,
+    params: any,
+    traccarBaseUrl: string,
+  ): Promise<void> {
+    const responseData = error.response?.data;
+    const responseStatus = error.response?.status;
+    const responseStatusText = error.response?.statusText;
+
+    this.logger.error(
+      `Falha ao enviar para Traccar (Tag ${tag.brgpsId}): ${error.message}`,
+    );
+    this.logger.error(
+      `Detalhes do erro - Status: ${responseStatus} ${responseStatusText}, Resposta: ${JSON.stringify(responseData)}`,
+    );
+    this.logger.error(`Payload enviado: ${JSON.stringify(params)}`);
+
+    if (params.batt !== undefined) {
+      await this.retryWithoutBattery(params, tag, traccarBaseUrl);
+    }
+
+    throw error;
+  }
+
+  private async retryWithoutBattery(
+    params: any,
+    tag: TagData,
+    traccarBaseUrl: string,
+  ): Promise<void> {
+    this.logger.warn(
+      `Tentando enviar sem campo batt para tag ${tag.brgpsId}...`,
+    );
+    const paramsWithoutBatt = { ...params };
+    delete paramsWithoutBatt.batt;
+
+    try {
+      const queryStringRetry = Object.keys(paramsWithoutBatt)
+        .filter((key) => paramsWithoutBatt[key] !== undefined)
+        .map((key) => `${key}=${paramsWithoutBatt[key]}`)
+        .join('&');
+
+      const fullUrlRetry = `${traccarBaseUrl}?${queryStringRetry}`;
+
+      const retryResponse = await axios.get(fullUrlRetry, {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'TagPadrin/1.0',
+          Accept: '*/*',
+        },
+      });
+      this.logger.log(
+        `Sucesso ao enviar sem batt: Tag ${tag.brgpsId} (Status: ${retryResponse.status})`,
+      );
+    } catch (retryError: any) {
+      this.logger.error(`Falha sem batt também: ${retryError.message}`);
+    }
+  }
+
+  private calculateBatteryPercentage(
+    batteryLevel: number | undefined,
+  ): number | undefined {
+    if (batteryLevel === undefined || batteryLevel === -1) {
+      return undefined;
+    }
+    if (batteryLevel === 3) return 100;
+    if (batteryLevel === 2) return 70;
+    if (batteryLevel === 1) return 35;
+    if (batteryLevel === 0) return 10;
+    return undefined;
   }
 
   async getSyncLogs(tagId?: string, limit: number = 50): Promise<any> {
