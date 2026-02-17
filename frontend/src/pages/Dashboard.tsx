@@ -202,7 +202,7 @@ export function Dashboard() {
                   <span className="text-xs font-semibold text-gray-500 uppercase">BRGPS API</span>
                   {loadingStatus ? (
                     <div className="h-2 w-2 rounded-full bg-gray-300 animate-pulse" />
-                  ) : serviceStatus?.brgps?.healthy ? (
+                  ) : (serviceStatus?.brgps?.healthy ?? serviceStatus?.brgps?.status === 'online') ? (
                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
                   ) : (
                     <div className="h-2 w-2 rounded-full bg-red-500" />
@@ -211,7 +211,7 @@ export function Dashboard() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                   {loadingStatus ? (
                     'Verificando...'
-                  ) : serviceStatus?.brgps?.healthy ? (
+                  ) : (serviceStatus?.brgps?.healthy ?? serviceStatus?.brgps?.status === 'online') ? (
                     <>
                       <Wifi className="w-3 h-3" /> Online
                     </>
@@ -229,7 +229,7 @@ export function Dashboard() {
                   <span className="text-xs font-semibold text-gray-500 uppercase">Banco de Dados</span>
                   {loadingStatus ? (
                     <div className="h-2 w-2 rounded-full bg-gray-300 animate-pulse" />
-                  ) : serviceStatus?.database?.healthy ? (
+                  ) : (serviceStatus?.database?.healthy ?? serviceStatus?.database?.status === 'online') ? (
                     <div className="h-2 w-2 rounded-full bg-emerald-500" />
                   ) : (
                     <div className="h-2 w-2 rounded-full bg-red-500" />
@@ -238,7 +238,7 @@ export function Dashboard() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                   {loadingStatus ? (
                     'Verificando...'
-                  ) : serviceStatus?.database?.healthy ? (
+                  ) : (serviceStatus?.database?.healthy ?? serviceStatus?.database?.status === 'online') ? (
                     <>
                       <Database className="w-3 h-3" /> Conectado
                     </>
@@ -276,13 +276,13 @@ export function Dashboard() {
           <CardBody className="space-y-6">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Serviço de Sync</span>
-              <span className={`font-semibold flex items-center ${loadingStatus ? 'text-gray-400' : serviceStatus?.sync?.healthy ? 'text-emerald-600' : 'text-red-600'}`}>
+              <span className={`font-semibold flex items-center ${loadingStatus ? 'text-gray-400' : (serviceStatus?.sync?.healthy ?? serviceStatus?.sync?.status === 'online') ? 'text-emerald-600' : 'text-red-600'}`}>
                 {loadingStatus ? (
                   <>
                     <div className="w-3 h-3 mr-1 rounded-full bg-gray-300 animate-pulse" />
                     Verificando...
                   </>
-                ) : serviceStatus?.sync?.healthy ? (
+                ) : (serviceStatus?.sync?.healthy ?? serviceStatus?.sync?.status === 'online') ? (
                   <>
                     <Activity className="w-3 h-3 mr-1" />
                     Ativo

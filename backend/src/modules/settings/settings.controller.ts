@@ -192,7 +192,11 @@ export class SettingsController {
       const intervals = this.schedulerRegistry.getIntervals();
       const syncJobRunning = intervals.includes('sync-job');
       if (syncJobRunning) {
-        services.sync = { status: 'online', message: 'Ativo', healthy: true };
+        services.sync = {
+          status: 'online',
+          message: 'Em execução',
+          healthy: true,
+        };
       } else {
         services.sync = {
           status: 'offline',
