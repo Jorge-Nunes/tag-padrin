@@ -38,7 +38,7 @@ export class SyncService {
     private prisma: PrismaService,
     private settingsService: SettingsService,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async syncAllTags(): Promise<SyncResult[]> {
     const settings = await this.settingsService.getSettings();
@@ -60,7 +60,7 @@ export class SyncService {
     this.logger.log(`Iniciando sincronização otimizada de ${tags.length} tags`);
     const startTime = Date.now();
 
-    const chunkSize = 20;
+    const chunkSize = 50;
     const results: SyncResult[] = [];
 
     for (let i = 0; i < tags.length; i += chunkSize) {
@@ -75,7 +75,7 @@ export class SyncService {
           'Content-Type': 'application/json',
         };
 
-        const response = await axios.get(url, { headers, timeout: 15000 });
+        const response = await axios.get(url, { headers, timeout: 30000 });
         const batchData = this.normalizeBatchResponse(response.data);
 
         const chunkResults: SyncResult[] = [];
@@ -258,8 +258,7 @@ export class SyncService {
       ) {
         if (response.data.statusCode && response.data.statusCode !== 200) {
           throw new Error(
-            `Erro na API BRGPS: ${
-              response.data.message || 'Status ' + response.data.statusCode
+            `Erro na API BRGPS: ${response.data.message || 'Status ' + response.data.statusCode
             }`,
           );
         }
