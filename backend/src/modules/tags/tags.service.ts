@@ -36,12 +36,21 @@ export class TagsService {
 
       if (existing) {
         throw new ConflictException(
-          `Tag com ID BRGPS ${data.brgpsId} já cadastrada`,
+          `Tag com ID BRGPS ${data.brgpsId} já cadastrada (Nome: ${existing.name})`,
         );
       }
     }
 
-    return await this.prisma.tag.create({ data: data as any });
+    try {
+      return await this.prisma.tag.create({ data: data as any });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(
+          `Já existe uma tag com este ID BRGPS cadastrada.`,
+        );
+      }
+      throw error;
+    }
   }
 
   async bulkCreate(data: Partial<Tag>[]): Promise<{ count: number }> {
