@@ -96,7 +96,7 @@ export class SettingsController {
       }
     } catch (error: any) {
       console.error('Erro ao testar conexão BRGPS:', error.message);
-      
+
       if (error.response) {
         // Erro com resposta do servidor
         return {
@@ -121,21 +121,36 @@ export class SettingsController {
 
   @Get('health')
   async getHealth() {
-    const services = {
-      api: { status: 'online', message: 'Operacional' },
-      database: { status: 'checking', message: 'Verificando...' },
-      brgps: { status: 'checking', message: 'Verificando...' },
-      sync: { status: 'checking', message: 'Verificando...' },
+    interface ServiceInfo {
+      status: string;
+      message: string;
+      healthy: boolean;
+    }
+
+    const services: Record<string, ServiceInfo> = {
+      api: { status: 'online', message: 'Operacional', healthy: true },
+      database: {
+        status: 'checking',
+        message: 'Verificando...',
+        healthy: false,
+      },
+      brgps: { status: 'checking', message: 'Verificando...', healthy: false },
+      sync: { status: 'checking', message: 'Verificando...', healthy: false },
     };
 
     // Check Database
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      services.database = { status: 'online', message: 'Conectado' };
+      services.database = {
+        status: 'online',
+        message: 'Conectado',
+        healthy: true,
+      };
     } catch (error: any) {
-      services.database = { 
-        status: 'offline', 
-        message: `Erro: ${error.message}` 
+      services.database = {
+        status: 'offline',
+        message: `Erro: ${error.message}`,
+        healthy: false,
       };
     }
 
@@ -144,23 +159,31 @@ export class SettingsController {
       const settings = await this.settingsService.getSettings();
       if (settings?.brgpsBaseUrl && settings?.brgpsToken) {
         const testUrl = `${settings.brgpsBaseUrl}/tag`;
+        // Usando api_token em query params ou headers conforme suportado
         await axios.get(testUrl, {
           params: { api_token: settings.brgpsToken },
           timeout: 5000,
         });
-        services.brgps = { status: 'online', message: 'Conectado' };
+        services.brgps = {
+          status: 'online',
+          message: 'Conectado',
+          healthy: true,
+        };
       } else {
-        services.brgps = { 
-          status: 'offline', 
-          message: 'URL ou Token não configurado' 
+        services.brgps = {
+          status: 'offline',
+          message: 'URL ou Token não configurado',
+          healthy: false,
         };
       }
     } catch (error: any) {
-      services.brgps = { 
-        status: 'offline', 
-        message: error.response?.status === 401 
-          ? 'Token inválido' 
-          : 'API indisponível' 
+      services.brgps = {
+        status: 'offline',
+        message:
+          error.response?.status === 401
+            ? 'Token inválido'
+            : 'API indisponível',
+        healthy: false,
       };
     }
 
@@ -169,22 +192,27 @@ export class SettingsController {
       const intervals = this.schedulerRegistry.getIntervals();
       const syncJobRunning = intervals.includes('sync-job');
       if (syncJobRunning) {
-        services.sync = { status: 'online', message: 'Em execução' };
+        services.sync = { status: 'online', message: 'Ativo', healthy: true };
       } else {
-        services.sync = { 
-          status: 'offline', 
-          message: 'Job não iniciado' 
+        services.sync = {
+          status: 'offline',
+          message: 'Job não iniciado',
+          healthy: false,
         };
       }
     } catch (error: any) {
-      services.sync = { 
-        status: 'offline', 
-        message: 'Serviço não disponível' 
+      services.sync = {
+        status: 'offline',
+        message: 'Serviço não disponível',
+        healthy: false,
       };
     }
 
-    const allOnline = Object.values(services).every(s => s.status === 'online');
-    
+    const allOnline =
+      services.database.healthy &&
+      services.brgps.healthy &&
+      services.sync.healthy;
+
     return {
       status: allOnline ? 'healthy' : 'degraded',
       timestamp: new Date().toISOString(),

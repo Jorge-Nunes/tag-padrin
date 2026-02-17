@@ -111,7 +111,8 @@ export class SyncService {
     const durationMs = Date.now() - startTime;
     const successCount = results.filter((r) => r.success).length;
     const failedCount = results.filter((r) => !r.success).length;
-    const status = failedCount === 0 ? 'SUCCESS' : successCount > 0 ? 'PARTIAL' : 'FAILED';
+    const status =
+      failedCount === 0 ? 'SUCCESS' : successCount > 0 ? 'PARTIAL' : 'FAILED';
 
     await this.prisma.syncOperation.create({
       data: {
@@ -124,7 +125,9 @@ export class SyncService {
       },
     });
 
-    this.logger.log(`Sincronização finalizada em ${durationMs}ms: ${successCount} sucesso, ${failedCount} falhas`);
+    this.logger.log(
+      `Sincronização finalizada em ${durationMs}ms: ${successCount} sucesso, ${failedCount} falhas`,
+    );
 
     return results;
   }

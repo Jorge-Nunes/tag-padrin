@@ -15,10 +15,10 @@ interface Tag {
 }
 
 interface ServiceStatus {
-  api: { status: string; healthy: boolean };
-  database: { status: string; healthy: boolean };
-  brgps: { status: string; healthy: boolean };
-  sync: { status: string; healthy: boolean };
+  api: { status: string; healthy: boolean; message: string };
+  database: { status: string; healthy: boolean; message: string };
+  brgps: { status: string; healthy: boolean; message: string };
+  sync: { status: string; healthy: boolean; message: string };
 }
 
 export function Dashboard() {
@@ -36,7 +36,7 @@ export function Dashboard() {
   useEffect(() => {
     loadStats();
     loadServiceStatus();
-    
+
     // Refresh status every 30 seconds
     const interval = setInterval(loadServiceStatus, 30000);
     return () => clearInterval(interval);
@@ -51,11 +51,11 @@ export function Dashboard() {
         active: tags.filter((t) => t.status === 'ACTIVE').length,
         inactive: tags.filter((t) => t.status === 'INACTIVE').length,
       });
-      
+
       // Find last sync time from tags
       const tagsWithSync = tags.filter((t) => t.lastSyncAt);
       if (tagsWithSync.length > 0) {
-        const lastSync = tagsWithSync.sort((a, b) => 
+        const lastSync = tagsWithSync.sort((a, b) =>
           new Date(b.lastSyncAt!).getTime() - new Date(a.lastSyncAt!).getTime()
         )[0];
         setLastSyncTime(lastSync.lastSyncAt!);
@@ -71,7 +71,7 @@ export function Dashboard() {
     try {
       setLoadingStatus(true);
       const response = await settingsApi.getHealth();
-      setServiceStatus(response.data);
+      setServiceStatus(response.data.services);
     } catch (error) {
       console.error('Erro ao carregar status dos serviços:', error);
     } finally {
@@ -84,7 +84,7 @@ export function Dashboard() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'Agora';
     if (diffMins < 60) return `${diffMins} min atrás`;
     const diffHours = Math.floor(diffMins / 60);
@@ -217,7 +217,7 @@ export function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <WifiOff className="w-3 h-3" /> {serviceStatus?.brgps?.status || 'Offline'}
+                      <WifiOff className="w-3 h-3" /> {serviceStatus?.brgps?.message || 'Offline'}
                     </>
                   )}
                 </p>
@@ -244,7 +244,7 @@ export function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="w-3 h-3" /> {serviceStatus?.database?.status || 'Erro'}
+                      <AlertCircle className="w-3 h-3" /> {serviceStatus?.database?.message || 'Erro'}
                     </>
                   )}
                 </p>
@@ -290,7 +290,7 @@ export function Dashboard() {
                 ) : (
                   <>
                     <AlertCircle className="w-3 h-3 mr-1" />
-                    {serviceStatus?.sync?.status || 'Inativo'}
+                    {serviceStatus?.sync?.message || 'Inativo'}
                   </>
                 )}
               </span>

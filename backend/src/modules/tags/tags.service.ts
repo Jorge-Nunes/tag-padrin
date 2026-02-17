@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Tag } from '@prisma/client';
 
@@ -25,6 +29,18 @@ export class TagsService {
   }
 
   async create(data: Partial<Tag>): Promise<Tag> {
+    if (data.brgpsId) {
+      const existing = await this.prisma.tag.findUnique({
+        where: { brgpsId: data.brgpsId },
+      });
+
+      if (existing) {
+        throw new ConflictException(
+          `Tag com ID BRGPS ${data.brgpsId} já cadastrada`,
+        );
+      }
+    }
+
     return await this.prisma.tag.create({ data: data as any });
   }
 
