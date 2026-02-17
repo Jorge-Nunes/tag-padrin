@@ -15,6 +15,12 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 
+interface ServiceInfo {
+  status: string;
+  message: string;
+  healthy: boolean;
+}
+
 @Controller('settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SettingsController {
@@ -121,12 +127,6 @@ export class SettingsController {
 
   @Get('health')
   async getHealth() {
-    interface ServiceInfo {
-      status: string;
-      message: string;
-      healthy: boolean;
-    }
-
     const services: Record<string, ServiceInfo> = {
       api: { status: 'online', message: 'Operacional', healthy: true },
       database: {
