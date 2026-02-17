@@ -18,20 +18,20 @@ export function ActivityLineChart({ data }: ActivityLineChartProps) {
               <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke="#E5E7EB" 
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="#E5E7EB"
             strokeOpacity={0.5}
             vertical={false}
           />
-          <XAxis 
-            dataKey="label" 
+          <XAxis
+            dataKey="label"
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#6B7280', fontSize: 12 }}
             dy={10}
           />
-          <YAxis 
+          <YAxis
             axisLine={false}
             tickLine={false}
             tick={{ fill: '#6B7280', fontSize: 12 }}
@@ -39,7 +39,8 @@ export function ActivityLineChart({ data }: ActivityLineChartProps) {
             domain={[0, Math.ceil(maxValue * 1.2)]}
           />
           <Tooltip
-            content={({ active, payload, label }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            content={({ active, payload, label }: any) => {
               if (active && payload && payload.length) {
                 return (
                   <div className="bg-white dark:bg-slate-800 px-3 py-2 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700">

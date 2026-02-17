@@ -23,15 +23,16 @@ export function StatusDonut({ data, total, uptime }: StatusDonutProps) {
             stroke="none"
           >
             {data.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
+              <Cell
+                key={`cell-${index}`}
                 fill={entry.color}
                 className="transition-all duration-300 hover:opacity-80"
               />
             ))}
           </Pie>
           <Tooltip
-            content={({ active, payload }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            content={({ active, payload }: any) => {
               if (active && payload && payload.length) {
                 const item = payload[0];
                 const percentage = total > 0 ? Math.round((item.value as number / total) * 100) : 0;
@@ -48,7 +49,7 @@ export function StatusDonut({ data, total, uptime }: StatusDonutProps) {
           />
         </PieChart>
       </ResponsiveContainer>
-      
+
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         <span className="text-3xl font-bold text-gray-900 dark:text-white">{uptime}%</span>
@@ -59,8 +60,8 @@ export function StatusDonut({ data, total, uptime }: StatusDonutProps) {
       <div className="flex justify-center gap-6 mt-[-20px]">
         {data.map((item) => (
           <div key={item.name} className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full" 
+            <div
+              className="w-3 h-3 rounded-full"
               style={{ backgroundColor: item.color }}
             />
             <span className="text-sm text-gray-600 dark:text-gray-400">
