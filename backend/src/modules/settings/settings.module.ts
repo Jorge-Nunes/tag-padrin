@@ -6,9 +6,9 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-    imports: [PrismaModule, ConfigModule],
-    providers: [SettingsService],
-    controllers: [SettingsController],
-    exports: [SettingsService],
+  imports: [PrismaModule, ConfigModule],
+  providers: [SettingsService],
+  controllers: [SettingsController],
+  exports: [SettingsService],
 })
-export class SettingsModule { }
+export class SettingsModule {}

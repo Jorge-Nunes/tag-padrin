@@ -14,4 +14,4 @@ import { SettingsModule } from '../settings/settings.module';
   ],
   providers: [SchedulerService],
 })
-export class SchedulerModule { }
+export class SchedulerModule {}

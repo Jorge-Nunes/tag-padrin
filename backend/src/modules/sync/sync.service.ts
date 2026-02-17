@@ -58,6 +58,7 @@ export class SyncService {
     })) as TagData[];
 
     this.logger.log(`Iniciando sincronização otimizada de ${tags.length} tags`);
+    const startTime = Date.now();
 
     const chunkSize = 20;
     const results: SyncResult[] = [];
@@ -106,6 +107,24 @@ export class SyncService {
         );
       }
     }
+
+    const durationMs = Date.now() - startTime;
+    const successCount = results.filter((r) => r.success).length;
+    const failedCount = results.filter((r) => !r.success).length;
+    const status = failedCount === 0 ? 'SUCCESS' : successCount > 0 ? 'PARTIAL' : 'FAILED';
+
+    await this.prisma.syncOperation.create({
+      data: {
+        totalTags: tags.length,
+        successCount,
+        failedCount,
+        durationMs,
+        status,
+        message: `Sincronização manual: ${successCount} sucesso, ${failedCount} falhas`,
+      },
+    });
+
+    this.logger.log(`Sincronização finalizada em ${durationMs}ms: ${successCount} sucesso, ${failedCount} falhas`);
 
     return results;
   }
@@ -490,6 +509,13 @@ export class SyncService {
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { tag: true },
+    });
+  }
+
+  async getSyncHistory(limit: number = 50): Promise<any> {
+    return await this.prisma.syncOperation.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
     });
   }
 

@@ -57,6 +57,7 @@ export const tagsApi = {
 
 export const syncApi = {
   manualSync: () => api.post('/sync'),
+  getHistory: (limit?: number) => api.get('/sync/history', { params: { limit } }),
 };
 
 export const settingsApi = {
@@ -68,6 +69,10 @@ export const settingsApi = {
     traccarUrl?: string;
     traccarToken?: string;
   }) => api.put('/settings', data),
+  getUptime: () => api.get('/settings/uptime'),
+  testConnection: (brgpsBaseUrl: string, brgpsToken: string) =>
+    api.post('/settings/test-connection', { brgpsBaseUrl, brgpsToken }),
+  getHealth: () => api.get('/settings/health'),
 };
 
 export const usersApi = {

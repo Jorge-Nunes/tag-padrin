@@ -6,7 +6,7 @@
 set -e
 
 echo "========================================="
-echo "DEPLOY PARA PRODUÇÃO - Tag Padrin"
+echo "DEPLOY PARA PRODUÇÃO - Tag Manager"
 echo "========================================="
 echo ""
 

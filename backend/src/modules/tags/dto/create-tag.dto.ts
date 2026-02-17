@@ -1,31 +1,37 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateTagDto {
-    @IsString()
-    @IsNotEmpty()
-    brgpsId: string;
+  @IsString()
+  @IsNotEmpty()
+  brgpsId: string;
 
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    description?: string;
+  @IsOptional()
+  @IsString()
+  description?: string;
 
-    @IsOptional()
-    @IsString()
-    status?: string;
+  @IsOptional()
+  @IsString()
+  status?: string;
 
-    @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 
-    @IsOptional()
-    @IsString()
-    imei?: string;
+  @IsOptional()
+  @IsString()
+  imei?: string;
 
-    @IsOptional()
-    @IsString()
-    traccarUrl?: string;
+  @IsOptional()
+  @IsString()
+  traccarUrl?: string;
 }

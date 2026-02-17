@@ -1,4 +1,4 @@
-# 🚀 Deploy em Produção - Tag Padrin
+# 🚀 Deploy em Produção - Tag Manager
 
 Este guia explica como fazer deploy da aplicação em um servidor novo/zerado usando o script automatizado.
 

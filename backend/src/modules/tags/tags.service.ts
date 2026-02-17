@@ -43,7 +43,14 @@ export class TagsService {
   }
 
   async remove(id: string): Promise<Tag> {
-    return await this.prisma.tag.delete({ where: { id } });
+    return await this.prisma.$transaction(async (tx) => {
+      // Deletar registros dependentes manualmente para evitar erros de constraint em produção
+      await tx.position.deleteMany({ where: { tagId: id } });
+      await tx.traccarLog.deleteMany({ where: { tagId: id } });
+      await tx.syncLog.deleteMany({ where: { tagId: id } });
+
+      return await tx.tag.delete({ where: { id } });
+    });
   }
 
   async getPositions(tagId: string, limit: number = 100) {

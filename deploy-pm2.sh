@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de Deploy - Tag Padrin com PM2
+# Script de Deploy - Tag Manager com PM2
 # Uso: sudo ./deploy-pm2.sh
 
 set -e

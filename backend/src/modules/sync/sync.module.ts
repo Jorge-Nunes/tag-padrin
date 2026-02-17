@@ -11,4 +11,4 @@ import { SettingsModule } from '../settings/settings.module';
   providers: [SyncService],
   exports: [SyncService],
 })
-export class SyncModule { }
+export class SyncModule {}

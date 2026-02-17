@@ -1,4 +1,4 @@
-# Melhorias Aplicadas - Tag Padrin
+# Melhorias Aplicadas - Tag Manager
 
 **Data**: 11 de Fevereiro de 2026  
 **Status**: ✅ Melhorias Implementadas

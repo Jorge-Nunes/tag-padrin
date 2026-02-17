@@ -21,7 +21,7 @@ import { UpdateTagDto } from './dto/update-tag.dto';
 export class TagsController {
   private readonly logger = new Logger(TagsController.name);
 
-  constructor(private tagsService: TagsService) { }
+  constructor(private tagsService: TagsService) {}
 
   @Get()
   async findAll(): Promise<Tag[]> {

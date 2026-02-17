@@ -106,3 +106,18 @@ model SystemSettings {
 
   @@map("settings")
 }
+
+model SyncOperation {
+  id          String   @id @default(uuid())
+  totalTags   Int      @map("total_tags")
+  successCount Int     @map("success_count")
+  failedCount Int      @map("failed_count")
+  durationMs  Int?     @map("duration_ms")
+  status      String   @default("SUCCESS") // SUCCESS, PARTIAL, FAILED
+  message     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sync_operations")
+  @@index([createdAt])
+  @@index([status, createdAt])
+}

@@ -40,14 +40,14 @@ export function Login() {
             <MapPin className="text-white w-8 h-8" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
-            Tag Padrin
+            Tag Manager
           </h1>
           <p className="text-gray-500 dark:text-gray-400 font-medium">
             Gerenciamento inteligente de rastreadores
           </p>
         </div>
 
-        <Card className="shadow-2xl border-gray-100 dark:border-slate-800">
+        <Card className="shadow-2xl border-gray-100 dark:border-slate-800 mt-8">
           <CardBody className="p-8 md:p-10">
             {error && (
               <div 
@@ -109,9 +109,11 @@ export function Login() {
           </CardBody>
         </Card>
 
-        <p className="text-center mt-8 text-sm text-gray-500 dark:text-gray-400">
-          © {new Date().getFullYear()} NCTY • Gestão de Frotas
-        </p>
+        <div className="text-center mt-8">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            © {new Date().getFullYear()} JCVN • Tag Manager
+          </p>
+        </div>
       </div>
     </div>
   );

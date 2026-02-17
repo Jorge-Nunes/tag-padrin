@@ -88,7 +88,7 @@ export function Sidebar() {
             <MapPin className="text-white w-6 h-6" />
           </div>
           {!isSidebarCollapsed && (
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight animate-in fade-in duration-300">Tag Padrin</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight animate-in fade-in duration-300">Tag Manager</span>
           )}
         </div>
       </div>

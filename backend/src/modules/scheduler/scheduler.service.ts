@@ -13,7 +13,7 @@ export class SchedulerService implements OnModuleInit {
     private syncService: SyncService,
     private settingsService: SettingsService,
     private schedulerRegistry: SchedulerRegistry,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     const settings = await this.settingsService.getSettings();
@@ -35,7 +35,9 @@ export class SchedulerService implements OnModuleInit {
   async startSyncJob(seconds: number) {
     this.stopSyncJob();
 
-    this.logger.log(`Iniciando job de sincronização com intervalo de ${seconds}s`);
+    this.logger.log(
+      `Iniciando job de sincronização com intervalo de ${seconds}s`,
+    );
 
     const interval = setInterval(async () => {
       await this.handleSync();
@@ -83,7 +85,9 @@ export class SchedulerService implements OnModuleInit {
     try {
       const results = await this.syncService.syncAllTags();
       const successCount = results.filter((r) => r.success).length;
-      this.logger.log(`Sincronização concluída: ${successCount}/${results.length} tags`);
+      this.logger.log(
+        `Sincronização concluída: ${successCount}/${results.length} tags`,
+      );
     } catch (error) {
       this.logger.error(`Erro no job de sincronização: ${error.message}`);
     }

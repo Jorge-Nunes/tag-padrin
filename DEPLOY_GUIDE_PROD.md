@@ -1,6 +1,6 @@
 # Guia de Deploy em Produção
 
-Este guia descreve como colocar a aplicação Tag Padrin em produção utilizando Docker Compose e Nginx.
+Este guia descreve como colocar a aplicação Tag Manager em produção utilizando Docker Compose e Nginx.
 
 ## Pré-requisitos
 

@@ -3,14 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardBody, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SkeletonCard } from '../components/ui/Skeleton';
-import { tagsApi } from '../services/api';
-import { Activity, Clock, AlertCircle, ShieldCheck, Database } from 'lucide-react';
+import { tagsApi, settingsApi } from '../services/api';
+import { Activity, Clock, AlertCircle, ShieldCheck, Database, Wifi, WifiOff } from 'lucide-react';
 import { spacing, colors } from '../design-tokens';
 
 interface Tag {
   id: string;
   name: string;
   status: 'ACTIVE' | 'INACTIVE';
+  lastSyncAt?: string;
+}
+
+interface ServiceStatus {
+  api: { status: string; healthy: boolean };
+  database: { status: string; healthy: boolean };
+  brgps: { status: string; healthy: boolean };
+  sync: { status: string; healthy: boolean };
 }
 
 export function Dashboard() {
@@ -20,10 +28,18 @@ export function Dashboard() {
     inactive: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [serviceStatus, setServiceStatus] = useState<ServiceStatus | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     loadStats();
+    loadServiceStatus();
+    
+    // Refresh status every 30 seconds
+    const interval = setInterval(loadServiceStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadStats = async () => {
@@ -35,11 +51,45 @@ export function Dashboard() {
         active: tags.filter((t) => t.status === 'ACTIVE').length,
         inactive: tags.filter((t) => t.status === 'INACTIVE').length,
       });
+      
+      // Find last sync time from tags
+      const tagsWithSync = tags.filter((t) => t.lastSyncAt);
+      if (tagsWithSync.length > 0) {
+        const lastSync = tagsWithSync.sort((a, b) => 
+          new Date(b.lastSyncAt!).getTime() - new Date(a.lastSyncAt!).getTime()
+        )[0];
+        setLastSyncTime(lastSync.lastSyncAt!);
+      }
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadServiceStatus = async () => {
+    try {
+      setLoadingStatus(true);
+      const response = await settingsApi.getHealth();
+      setServiceStatus(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar status dos serviços:', error);
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
+
+  const formatRelativeTime = (isoString: string) => {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Agora';
+    if (diffMins < 60) return `${diffMins} min atrás`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h atrás`;
+    return `${Math.floor(diffHours / 24)}d atrás`;
   };
 
   const statCards = [
@@ -146,29 +196,68 @@ export function Dashboard() {
           </CardHeader>
           <CardBody>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* BRGPS API Status */}
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-750/50 border border-gray-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-gray-500 uppercase">BRGPS API</span>
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  {loadingStatus ? (
+                    <div className="h-2 w-2 rounded-full bg-gray-300 animate-pulse" />
+                  ) : serviceStatus?.brgps?.healthy ? (
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  ) : (
+                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Integração Online</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                  {loadingStatus ? (
+                    'Verificando...'
+                  ) : serviceStatus?.brgps?.healthy ? (
+                    <>
+                      <Wifi className="w-3 h-3" /> Online
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="w-3 h-3" /> {serviceStatus?.brgps?.status || 'Offline'}
+                    </>
+                  )}
+                </p>
               </div>
 
+              {/* Database Status */}
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-750/50 border border-gray-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase">Traccar</span>
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Banco de Dados</span>
+                  {loadingStatus ? (
+                    <div className="h-2 w-2 rounded-full bg-gray-300 animate-pulse" />
+                  ) : serviceStatus?.database?.healthy ? (
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  ) : (
+                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Gateway Ativo</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                  {loadingStatus ? (
+                    'Verificando...'
+                  ) : serviceStatus?.database?.healthy ? (
+                    <>
+                      <Database className="w-3 h-3" /> Conectado
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-3 h-3" /> {serviceStatus?.database?.status || 'Erro'}
+                    </>
+                  )}
+                </p>
               </div>
 
+              {/* Last Sync */}
               <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-750/50 border border-gray-100 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-gray-500 uppercase">Sincronização</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Última Sincronização</span>
                   <Clock className="h-4 w-4 text-gray-400" />
                 </div>
                 <p className="text-sm text-gray-900 dark:text-gray-300 font-medium">
-                  {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {lastSyncTime ? formatRelativeTime(lastSyncTime) : 'Nunca'}
                 </p>
               </div>
             </div>
@@ -186,10 +275,24 @@ export function Dashboard() {
           </CardHeader>
           <CardBody className="space-y-6">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Banco de Dados</span>
-              <span className="font-semibold text-emerald-600 flex items-center">
-                <Database className="w-3 h-3 mr-1" />
-                Conectado
+              <span className="text-gray-500">Serviço de Sync</span>
+              <span className={`font-semibold flex items-center ${loadingStatus ? 'text-gray-400' : serviceStatus?.sync?.healthy ? 'text-emerald-600' : 'text-red-600'}`}>
+                {loadingStatus ? (
+                  <>
+                    <div className="w-3 h-3 mr-1 rounded-full bg-gray-300 animate-pulse" />
+                    Verificando...
+                  </>
+                ) : serviceStatus?.sync?.healthy ? (
+                  <>
+                    <Activity className="w-3 h-3 mr-1" />
+                    Ativo
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {serviceStatus?.sync?.status || 'Inativo'}
+                  </>
+                )}
               </span>
             </div>
             <div className="pt-4 border-t border-gray-100 dark:border-slate-750">

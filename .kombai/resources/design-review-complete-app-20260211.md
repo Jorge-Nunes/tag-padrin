@@ -1,4 +1,4 @@
-# Revisão de Design UI/UX Completa: Tag Padrin
+# Revisão de Design UI/UX Completa: Tag Manager
 
 **Data da Revisão**: 11 de Fevereiro de 2026  
 **Páginas Analisadas**: Todas (Login, Dashboard, Tags, Settings, Users)  

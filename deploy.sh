@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script de Deploy - Tag Padrin
+# Script de Deploy - Tag Manager
 # Uso: ./deploy.sh [producao|desenvolvimento]
-# Autor: Sistema Tag Padrin
+# Autor: Sistema Tag Manager
 # Data: 2026-02-11
 
 set -e
@@ -144,7 +144,7 @@ generate_env_file() {
     
     cat > "$ENV_FILE" << EOF
 # ========================================
-# Configuração de Produção - Tag Padrin
+# Configuração de Produção - Tag Manager
 # Gerado em: $(date)
 # ========================================
 
@@ -335,7 +335,7 @@ check_health() {
 main() {
     clear
     echo "========================================"
-    echo "   DEPLOY - Tag Padrin"
+    echo "   DEPLOY - Tag Manager"
     echo "========================================"
     echo ""
     

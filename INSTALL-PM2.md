@@ -1,4 +1,4 @@
-# 🚀 Deploy com PM2 - Tag Padrin
+# 🚀 Deploy com PM2 - Tag Manager
 
 Este guia explica como instalar a aplicação **sem Docker** para backend e frontend, usando:
 - **PostgreSQL** no Docker
@@ -37,6 +37,21 @@ O script irá:
 - ✅ Instalar e configurar Nginx
 - ✅ Configurar backend e frontend
 - ✅ Iniciar todos os serviços
+
+### ⚠️ IMPORTANTE: Criar Usuário Admin
+
+**Após a primeira instalação**, execute o seed do Prisma para criar o usuário administrador:
+
+```bash
+cd /opt/tag-padrin/backend
+npx prisma db seed
+```
+
+**Credenciais padrão:**
+- **Email:** admin@tagpadrin.com
+- **Senha:** admin123
+
+> ⚠️ **Nota:** O seed não é executado automaticamente! Você deve rodar manualmente após a primeira instalação. Se tentar fazer login sem executar o seed, receberá erro de "usuário não encontrado".
 
 ### 2. Configure o token BRGPS
 
@@ -169,6 +184,8 @@ pm2 restart all
 pm2 status
 ```
 
+> 💡 **Nota sobre Seed:** O comando `npx prisma db seed` só precisa ser executado na **primeira instalação** para criar o usuário admin. Nas atualizações subsequentes, não é necessário executar novamente a menos que você queira resetar as configurações padrão.
+
 ---
 
 ## 🐛 Troubleshooting
@@ -182,6 +199,19 @@ pm2 status
 # Ver logs
 curl http://localhost:3000/api/health
 pm2 logs tag-padrin-backend
+```
+
+### Erro de login (usuário não encontrado)
+
+Se receber erro ao tentar fazer login com `admin@tagpadrin.com`, provavelmente o seed não foi executado:
+
+```bash
+# Executar seed para criar usuário admin
+cd /opt/tag-padrin/backend
+npx prisma db seed
+
+# Verificar se usuário foi criado
+docker exec -it tag-padrin-db psql -U postgres tagpadrin -c "SELECT email, name FROM \"User\";"
 ```
 
 ### Erro de conexão com banco

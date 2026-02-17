@@ -7,7 +7,7 @@ set -e  # Para execução em caso de erro
 
 echo "========================================="
 echo "Script de correção do banco de dados"
-echo "Tag Padrin - Produção"
+echo "Tag Manager - Produção"
 echo "========================================="
 echo ""
 
