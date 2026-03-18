@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Logger,
+  Request,
 } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -21,47 +22,59 @@ import { UpdateTagDto } from './dto/update-tag.dto';
 export class TagsController {
   private readonly logger = new Logger(TagsController.name);
 
-  constructor(private tagsService: TagsService) {}
+  constructor(private tagsService: TagsService) { }
 
   @Get()
-  async findAll(): Promise<Tag[]> {
-    return await this.tagsService.findAll();
+  async findAll(@Request() req: any): Promise<Tag[]> {
+    return await this.tagsService.findAll(req.user.userId);
   }
 
   @Post('bulk')
-  async bulkCreate(@Body() data: any[]) {
-    this.logger.log(`Solicitação de importação em massa: ${data.length} itens`);
-    return await this.tagsService.bulkCreate(data);
+  async bulkCreate(@Request() req: any, @Body() data: any[]) {
+    this.logger.log(`Solicitação de importação em massa: ${data.length} itens (User: ${req.user.userId})`);
+    return await this.tagsService.bulkCreate(req.user.userId, data);
   }
 
   @Post()
-  async create(@Body() data: CreateTagDto): Promise<Tag> {
-    return await this.tagsService.create(data);
+  async create(@Request() req: any, @Body() data: CreateTagDto): Promise<Tag> {
+    return await this.tagsService.create(req.user.userId, data);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Tag> {
-    return await this.tagsService.findOne(id);
+  async findOne(@Request() req: any, @Param('id') id: string): Promise<Tag> {
+    return await this.tagsService.findOne(req.user.userId, id);
   }
 
   @Put(':id')
   async update(
+    @Request() req: any,
     @Param('id') id: string,
     @Body() data: UpdateTagDto,
   ): Promise<Tag> {
-    return await this.tagsService.update(id, data);
+    return await this.tagsService.update(req.user.userId, id, data);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<Tag> {
-    return await this.tagsService.remove(id);
+  async remove(@Request() req: any, @Param('id') id: string): Promise<Tag> {
+    return await this.tagsService.remove(req.user.userId, id);
   }
 
   @Get(':id/positions')
   async getPositions(
+    @Request() req: any,
     @Param('id') id: string,
     @Query('limit') limit: string,
-  ): Promise<any[]> {
-    return await this.tagsService.getPositions(id, parseInt(limit) || 100);
+    @Query('page') page: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): Promise<{ data: any[]; total: number; page: number; totalPages: number }> {
+    return await this.tagsService.getPositions(
+      req.user.userId, 
+      id, 
+      parseInt(limit) || 20,
+      parseInt(page) || 1,
+      startDate,
+      endDate
+    );
   }
 }

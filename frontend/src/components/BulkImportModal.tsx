@@ -43,7 +43,7 @@ export function BulkImportModal({ isOpen, onClose, onSuccess }: BulkImportModalP
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
-                const parsedData = results.data as any[];
+                const parsedData = results.data as Record<string, string>[];
                 const validatedData: ImportData[] = [];
                 const validationErrors: string[] = [];
 
@@ -91,8 +91,9 @@ export function BulkImportModal({ isOpen, onClose, onSuccess }: BulkImportModalP
             onSuccess();
             onClose();
             resetState();
-        } catch (error: any) {
-            const message = error.response?.data?.message || 'Falha na importação em massa.';
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
+            const message = err.response?.data?.message || 'Falha na importação em massa.';
             showAlert({ title: 'Erro na Importação', message, type: 'danger' });
         } finally {
             setLoading(false);

@@ -49,7 +49,12 @@ export class UsersController {
   update(
     @Param('id') id: string,
     @Body()
-    data: { email?: string; name?: string; role?: 'ADMIN' | 'OPERATOR' },
+    data: {
+      email?: string;
+      name?: string;
+      role?: 'ADMIN' | 'OPERATOR';
+      isApproved?: boolean;
+    },
   ) {
     return this.usersService.update(id, data);
   }

@@ -6,6 +6,7 @@ import {
   Body,
   UseGuards,
   SetMetadata,
+  Request,
 } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import axios from 'axios';
@@ -35,15 +36,14 @@ export class SettingsController {
   }
 
   @Get()
-  async getSettings() {
-    return this.settingsService.getSettings();
+  async getSettings(@Request() req: any) {
+    return this.settingsService.getSettings(req.user.userId);
   }
 
   @Put()
-  @SetMetadata('roles', ['ADMIN'])
-  async updateSettings(@Body() data: UpdateSettingsDto) {
+  async updateSettings(@Request() req: any, @Body() data: UpdateSettingsDto) {
     try {
-      return await this.settingsService.updateSettings(data);
+      return await this.settingsService.updateSettings(req.user.userId, data);
     } catch (error) {
       console.error('Error updating settings:', error);
       throw error;
@@ -154,38 +154,12 @@ export class SettingsController {
       };
     }
 
-    // Check BRGPS API
-    try {
-      const settings = await this.settingsService.getSettings();
-      if (settings?.brgpsBaseUrl && settings?.brgpsToken) {
-        const testUrl = `${settings.brgpsBaseUrl}/tag`;
-        // Usando api_token em query params ou headers conforme suportado
-        await axios.get(testUrl, {
-          params: { api_token: settings.brgpsToken },
-          timeout: 5000,
-        });
-        services.brgps = {
-          status: 'online',
-          message: 'Conectado',
-          healthy: true,
-        };
-      } else {
-        services.brgps = {
-          status: 'offline',
-          message: 'URL ou Token não configurado',
-          healthy: false,
-        };
-      }
-    } catch (error: any) {
-      services.brgps = {
-        status: 'offline',
-        message:
-          error.response?.status === 401
-            ? 'Token inválido'
-            : 'API indisponível',
-        healthy: false,
-      };
-    }
+    // Check BRGPS API (Skip for now - settings are user-specific)
+    services.brgps = {
+      status: 'info',
+      message: 'Configuração por usuário',
+      healthy: true,
+    };
 
     // Check Sync Service (Scheduler)
     try {

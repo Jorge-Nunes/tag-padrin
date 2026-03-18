@@ -95,8 +95,8 @@ export function Users() {
             setEditingUser(null);
             setFormData({ email: '', name: '', password: '', role: 'OPERATOR' });
             loadUsers();
-        } catch (error: any) {
-            const message = error.response?.data?.message || 'Erro ao salvar usuário';
+        } catch (error: unknown) {
+            const message = ((error as unknown) as {response?: {data?: {message?: string}}}).response?.data?.message || 'Erro ao salvar usuário';
             showAlert({ title: 'Erro', message, type: 'danger' });
         }
     };
@@ -189,7 +189,7 @@ export function Users() {
                     <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <select
                         value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value as any)}
+                        onChange={(e) => setRoleFilter(e.target.value as 'ALL' | 'ADMIN' | 'OPERATOR')}
                         className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white appearance-none"
                     >
                         <option value="ALL">Todos os Perfis</option>
@@ -324,7 +324,7 @@ export function Users() {
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 text-left block mb-1">Perfil de Acesso</label>
                             <select
                                 value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'OPERATOR' })}
                                 className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white"
                             >
                                 <option value="OPERATOR">Operador</option>

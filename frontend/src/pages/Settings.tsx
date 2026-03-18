@@ -89,7 +89,7 @@ export function Settings() {
       });
     } catch (error) {
       console.error('Save error:', error);
-      const message = (error as any).response?.data?.message || 'Erro ao salvar configurações';
+      const message = (error as unknown as {response?: {data?: {message?: string | string[]}}}).response?.data?.message || 'Erro ao salvar configurações';
       showAlert({
         title: 'Erro',
         message: Array.isArray(message) ? message.join('\n') : message,
@@ -121,8 +121,8 @@ export function Settings() {
         type: stats.failed > 0 ? 'warning' : 'success',
       });
     } catch (error) {
-      const message = (error as any).response?.data?.message || 'Erro na sincronização';
-      showAlert({ title: 'Erro', message, type: 'danger' });
+      const message = (error as unknown as {response?: {data?: {message?: string | string[]}}}).response?.data?.message || 'Erro na sincronização';
+      showAlert({ title: 'Erro', message: Array.isArray(message) ? message.join('\n') : message, type: 'danger' });
     } finally {
       setSyncing(false);
     }
@@ -150,11 +150,11 @@ export function Settings() {
         });
         return false;
       }
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Erro ao testar conexão';
+    } catch (error: unknown) {
+      const message = ((error as unknown) as {response?: {data?: {message?: string}}}).response?.data?.message || 'Erro ao testar conexão';
       showAlert({
         title: 'Erro',
-        message,
+        message: Array.isArray(message) ? message.join('\n') : message,
         type: 'danger',
       });
       return false;

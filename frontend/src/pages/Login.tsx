@@ -25,8 +25,9 @@ export function Login() {
       const response = await authApi.login(email, password);
       login(response.data.access_token, response.data.user);
       navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Credenciais inválidas. Tente novamente.');
+    } catch (err: unknown) {
+      const errorResponse = err as { response?: { data?: { message?: string } } };
+      setError(errorResponse.response?.data?.message || 'Credenciais inválidas. Tente novamente.');
     } finally {
       setLoading(false);
     }

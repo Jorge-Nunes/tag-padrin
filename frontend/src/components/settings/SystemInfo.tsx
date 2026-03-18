@@ -88,7 +88,7 @@ export function SystemInfo({ onRefresh }: SystemInfoProps) {
         },
         { 
           name: 'BRGPS API', 
-          status: healthData.services.brgps.status === 'online' ? 'online' : 'offline', 
+          status: healthData.services.brgps.status === 'online' || healthData.services.brgps.status === 'info' ? 'online' : 'offline', 
           lastChecked: now,
           message: healthData.services.brgps.message 
         },

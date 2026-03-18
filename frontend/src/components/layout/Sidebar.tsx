@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, MapPin, Settings as SettingsIcon, LogOut, Grid, ChevronLeft, ChevronRight, Users as UsersIcon, X } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { LayoutDashboard, MapPin, Settings as SettingsIcon, LogOut, Grid, ChevronLeft, ChevronRight, Users as UsersIcon, X, History } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useLayoutStore } from '../../store/layoutStore';
 import { useEffect } from 'react';
@@ -9,10 +9,12 @@ export function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { isSidebarCollapsed, toggleSidebar, isMobileMenuOpen, setMobileMenuOpen } = useLayoutStore();
+  const location = useLocation();
 
   const navItems = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/tags', icon: Grid, label: 'Dispositivos' },
+    { to: '/tags?tab=history', icon: History, label: 'Histórico' },
     { to: '/settings', icon: SettingsIcon, label: 'Configurações' },
     { to: '/users', icon: UsersIcon, label: 'Usuários', adminOnly: true },
   ].filter(item => !item.adminOnly || user?.role === 'ADMIN');
@@ -103,14 +105,20 @@ export function Sidebar() {
             to={item.to}
             onClick={handleNavClick}
             title={isSidebarCollapsed ? item.label : ''}
-            className={({ isActive }) =>
-              `flex items-center rounded-xl font-semibold transition-all duration-200 group ${focus.visible}
+            className={() => {
+              const isActive = item.to === '/'
+                ? location.pathname === '/'
+                : item.to.includes('?tab=')
+                  ? location.pathname === item.to.split('?')[0] && location.search === `?${item.to.split('?')[1]}`
+                  : location.pathname.startsWith(item.to) && !location.search.includes('?tab=');
+              
+              return `flex items-center rounded-xl font-semibold transition-all duration-200 group ${focus.visible}
               ${isSidebarCollapsed ? 'justify-center min-h-[44px] p-3' : 'space-x-3 px-4 py-3 min-h-[44px]'}
               ${isActive
                 ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50 hover:text-gray-900 dark:hover:text-white'
-              }`
-            }
+              }`;
+            }}
           >
             <item.icon className={`w-5 h-5 transition-transform duration-200 group-hover:scale-110 shrink-0`} aria-hidden="true" />
             {!isSidebarCollapsed && (

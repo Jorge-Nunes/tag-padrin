@@ -13,20 +13,36 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(OPERATOR)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  name          String?
+  role          Role     @default(OPERATOR)
+  isApproved    Boolean  @default(false) @map("is_approved")
+  
+  // User-specific SaaS settings
+  syncInterval  Int      @default(60) @map("sync_interval")
+  brgpsBaseUrl  String?  @map("brgps_base_url")
+  brgpsToken    String?  @map("brgps_token")
+  traccarUrl    String?  @map("traccar_url")
+  traccarToken  String?  @map("traccar_token")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tags          Tag[]
+  syncOperations SyncOperation[]
+  syncLogs      SyncLog[]
 
   @@map("users")
+  @@index([brgpsBaseUrl])
 }
 
 model Tag {
   id                String       @id @default(uuid())
-  brgpsId           String       @unique @map("brgps_id")
+  userId            String       @map("user_id")
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brgpsId           String       @map("brgps_id")
   name              String
   description       String?
   status            String       @default("ACTIVE")
@@ -45,7 +61,9 @@ model Tag {
   traccarLogs       TraccarLog[]
   syncLogs          SyncLog[]
 
+  @@unique([userId, brgpsId])
   @@map("tags")
+  @@index([userId])
   @@index([lastSyncAt])
   @@index([status])
 }
@@ -66,11 +84,15 @@ model Position {
 
   @@map("positions")
   @@index([tagId, timestamp])
+  @@index([tagId, createdAt])
   @@index([createdAt])
+  @@index([syncedToTraccar])
 }
 
 model SyncLog {
   id            String   @id @default(uuid())
+  userId        String?  @map("user_id")
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   tagId         String?  @map("tag_id")
   tag           Tag?     @relation(fields: [tagId], references: [id], onDelete: SetNull)
   status        String // SUCCESS, ERROR
@@ -79,8 +101,10 @@ model SyncLog {
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("sync_logs")
+  @@index([userId])
   @@index([tagId, createdAt])
   @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 model TraccarLog {
@@ -95,6 +119,7 @@ model TraccarLog {
 
   @@map("traccar_logs")
   @@index([tagId, createdAt])
+  @@index([createdAt])
 }
 
 model SystemSettings {
@@ -109,6 +134,8 @@ model SystemSettings {
 
 model SyncOperation {
   id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalTags   Int      @map("total_tags")
   successCount Int     @map("success_count")
   failedCount Int      @map("failed_count")
@@ -118,6 +145,7 @@ model SyncOperation {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("sync_operations")
+  @@index([userId])
   @@index([createdAt])
   @@index([status, createdAt])
 }

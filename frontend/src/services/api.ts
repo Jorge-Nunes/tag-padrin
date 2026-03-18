@@ -50,9 +50,9 @@ export const tagsApi = {
   create: (data: Record<string, unknown>) => api.post('/tags', data),
   update: (id: string, data: Record<string, unknown>) => api.put(`/tags/${id}`, data),
   delete: (id: string) => api.delete(`/tags/${id}`),
-  bulkCreate: (data: any[]) => api.post('/tags/bulk', data),
-  getPositions: (id: string, limit?: number) =>
-    api.get(`/tags/${id}/positions`, { params: { limit } }),
+  bulkCreate: <T>(data: T[]) => api.post('/tags/bulk', data),
+  getPositions: (id: string, page?: number, limit?: number, startDate?: string, endDate?: string) =>
+    api.get(`/tags/${id}/positions`, { params: { page, limit, startDate, endDate } }),
 };
 
 export const syncApi = {

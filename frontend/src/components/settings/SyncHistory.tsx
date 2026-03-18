@@ -39,7 +39,7 @@ export function SyncHistory({ onSync, loading = false, lastSync }: SyncHistoryPr
       setError(null);
       const response = await syncApi.getHistory(20);
       setHistory(response.data.data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Erro ao carregar histórico');
       console.error('Error fetching sync history:', err);
     } finally {

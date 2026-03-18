@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState, forwardRef, useId } from 'react';
 import type { InputHTMLAttributes } from 'react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { focus } from '../../design-tokens';
@@ -11,7 +11,8 @@ interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ label, error, className = '', id, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
-    const inputId = id || `password-${Math.random().toString(36).substr(2, 9)}`;
+    const reactId = useId();
+    const inputId = id || reactId;
 
     return (
       <div className="space-y-2">

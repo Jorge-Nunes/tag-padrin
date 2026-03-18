@@ -1,35 +1,23 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { SyncService } from '../sync/sync.service';
-import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class SchedulerService implements OnModuleInit {
   private readonly logger = new Logger(SchedulerService.name);
   private readonly JOB_NAME = 'sync-job';
   private readonly CLEANUP_JOB_NAME = 'cleanup-job';
+  private readonly DEFAULT_SYNC_INTERVAL = 60; // 60 segundos
 
   constructor(
     private syncService: SyncService,
-    private settingsService: SettingsService,
     private schedulerRegistry: SchedulerRegistry,
-  ) {}
+  ) { }
 
   async onModuleInit() {
-    const settings = await this.settingsService.getSettings();
-    const interval = settings?.syncInterval || 60;
-
-    // Iniciar jobs
-    await this.startSyncJob(interval);
+    // Iniciar jobs com intervalo padrão
+    await this.startSyncJob(this.DEFAULT_SYNC_INTERVAL);
     this.startCleanupJob();
-
-    // Ouvir mudanças nas configurações
-    this.settingsService.settingsUpdated$.subscribe(async () => {
-      const updatedSettings = await this.settingsService.getSettings();
-      if (updatedSettings) {
-        await this.startSyncJob(updatedSettings.syncInterval);
-      }
-    });
   }
 
   async startSyncJob(seconds: number) {

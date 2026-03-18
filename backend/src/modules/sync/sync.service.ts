@@ -18,6 +18,7 @@ interface BRGPSPosition {
 
 interface TagData {
   id: string;
+  userId: string;
   brgpsId: string;
   status: string;
   traccarUrl?: string;
@@ -40,24 +41,76 @@ export class SyncService {
     private configService: ConfigService,
   ) { }
 
-  async syncAllTags(): Promise<SyncResult[]> {
-    const settings = await this.settingsService.getSettings();
-    const brgpsBaseUrl = settings?.brgpsBaseUrl;
-    const brgpsToken = settings?.brgpsToken;
+  async syncAllTags(userId?: string): Promise<SyncResult[]> {
+    // Buscar todos os usuários ou um específico que tenham credenciais BRGPS configuradas
+    const users = await this.prisma.user.findMany({
+      where: {
+        AND: [
+          userId ? { id: userId } : {},
+          { brgpsBaseUrl: { not: null } },
+          { brgpsToken: { not: null } },
+        ],
+      },
+      select: {
+        id: true,
+        email: true,
+        brgpsBaseUrl: true,
+        brgpsToken: true,
+      },
+    });
 
-    if (!brgpsBaseUrl || !brgpsToken) {
-      this.logger.error(
-        'Configurações da BRGPS ausentes para sincronização global',
-      );
+    if (users.length === 0) {
+      this.logger.warn('Nenhum usuário com credenciais BRGPS configuradas');
       return [];
     }
 
+    this.logger.log(`Sincronizando tags de ${users.length} usuário(s)`);
+    const allResults: SyncResult[] = [];
+
+    // Sincronizar tags de cada usuário em paralelo para evitar bloqueios
+    const syncPromises = users.map(async (user) => {
+      this.logger.log(`Iniciando sincronização para: ${user.email}`);
+      try {
+        const userResults = await this.syncUserTags(user.id, user.brgpsBaseUrl!, user.brgpsToken!);
+        return userResults;
+      } catch (error: any) {
+        this.logger.error(`Falha crítica na sync do usuário ${user.email}: ${error.message}`);
+        return [];
+      }
+    });
+
+    const resultsArray = await Promise.all(syncPromises);
+    resultsArray.forEach(userResults => allResults.push(...userResults));
+
+    return allResults;
+  }
+
+  /**
+   * Sincroniza as tags de um usuário específico
+   */
+  private async syncUserTags(
+    userId: string,
+    brgpsBaseUrl: string,
+    brgpsToken: string,
+  ): Promise<SyncResult[]> {
+    // Buscar tags E traccarUrl do usuário em uma só query
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { traccarUrl: true },
+    });
+    const userTraccarUrl = user?.traccarUrl || null;
+
     const tags = (await this.prisma.tag.findMany({
-      where: { status: 'ACTIVE' },
-      select: { id: true, brgpsId: true, status: true, traccarUrl: true },
+      where: { userId, status: 'ACTIVE' },
+      select: { id: true, userId: true, brgpsId: true, status: true, traccarUrl: true },
     })) as TagData[];
 
-    this.logger.log(`Iniciando sincronização otimizada de ${tags.length} tags`);
+    if (tags.length === 0) {
+      this.logger.log(`Usuário ${userId}: Nenhuma tag ativa para sincronizar`);
+      return [];
+    }
+
+    this.logger.log(`Usuário ${userId}: Sincronizando ${tags.length} tags`);
     const startTime = Date.now();
 
     const chunkSize = 50;
@@ -79,22 +132,57 @@ export class SyncService {
         const batchData = this.normalizeBatchResponse(response.data);
 
         const chunkResults: SyncResult[] = [];
-        for (const tag of chunk) {
+        const successLogs: { tagId: string; userId: string; brgpsResponse: any }[] = [];
+
+        // Processar todas as tags do lote em paralelo dentro do chunk
+        const tagProcessingPromises = chunk.map(async (tag): Promise<{ result: SyncResult; tagInfo: BRGPSPosition } | SyncResult> => {
           const tagInfo = batchData.find(
             (d: any) => String(d.id) === String(tag.brgpsId),
           );
+
           if (!tagInfo) {
-            chunkResults.push({
+            return {
               tagId: tag.id,
               success: false,
               error: 'Dispositivo não encontrado na resposta do lote',
-            });
-            continue;
+            };
           }
-          const result = await this.processTagUpdate(tag, tagInfo);
-          chunkResults.push(result);
-          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          const effectiveTraccarUrl = tag.traccarUrl || userTraccarUrl;
+          const result = await this.processTagUpdate(tag, tagInfo, effectiveTraccarUrl);
+          return { result, tagInfo };
+        });
+
+        const chunkResponses = await Promise.all(tagProcessingPromises);
+
+        chunkResponses.forEach((resp) => {
+          if ('result' in resp) {
+            const { result, tagInfo } = resp as { result: SyncResult; tagInfo: BRGPSPosition };
+            chunkResults.push(result);
+            if (result.success) {
+              successLogs.push({
+                tagId: result.tagId,
+                userId: userId,
+                brgpsResponse: tagInfo
+              });
+            }
+          } else {
+            chunkResults.push(resp as SyncResult);
+          }
+        });
+
+        // Batch insert de SyncLogs para todas as tags do chunk
+        if (successLogs.length > 0) {
+          await this.prisma.syncLog.createMany({
+            data: successLogs.map((log) => ({
+              tagId: log.tagId,
+              userId: log.userId,
+              status: 'SUCCESS',
+              brgpsResponse: log.brgpsResponse,
+            })),
+          });
         }
+
         results.push(...chunkResults);
       } catch (error: any) {
         this.logger.error(`Erro ao processar lote de tags: ${error.message}`);
@@ -116,12 +204,13 @@ export class SyncService {
 
     await this.prisma.syncOperation.create({
       data: {
+        userId, // Fundamental: Salva o userId na operação de sincronização
         totalTags: tags.length,
         successCount,
         failedCount,
         durationMs,
         status,
-        message: `Sincronização manual: ${successCount} sucesso, ${failedCount} falhas`,
+        message: `Sincronização ${userId ? 'manual' : 'automática'}: ${successCount} sucesso, ${failedCount} falhas`,
       },
     });
 
@@ -142,6 +231,7 @@ export class SyncService {
   private async processTagUpdate(
     tag: TagData,
     positionData: BRGPSPosition,
+    traccarUrl: string | null,
   ): Promise<SyncResult> {
     try {
       if (!positionData || (!positionData.lat && !positionData.latitude)) {
@@ -160,7 +250,7 @@ export class SyncService {
         ? positionData.timestamp * 1000
         : Date.now();
 
-      // Transação para consistência e performance
+      // Transação para consistência: position + tag update (SyncLog é batch)
       const [position] = await this.prisma.$transaction([
         this.prisma.position.create({
           data: {
@@ -190,40 +280,38 @@ export class SyncService {
             lastSyncAt: new Date(),
           },
         }),
-        this.prisma.syncLog.create({
-          data: {
-            tagId: tag.id,
-            status: 'SUCCESS',
-            brgpsResponse: positionData as any,
-          },
-        }),
       ]);
 
-      try {
-        await this.sendToTraccar(tag, position);
-      } catch (e: any) {
-        this.logger.error(`Erro Traccar ${tag.brgpsId}: ${e.message}`);
+      // Enviar para Traccar usando URL efetiva (tag > user)
+      const effectiveTraccarUrl = traccarUrl;
+      if (effectiveTraccarUrl) {
+        try {
+          await this.sendToTraccar({ ...tag, traccarUrl: effectiveTraccarUrl }, position);
+        } catch (e: any) {
+          this.logger.error(`Erro Traccar ${tag.brgpsId}: ${e.message}`);
+        }
       }
 
       return { tagId: tag.id, success: true, position };
     } catch (error: any) {
       await this.prisma.syncLog.create({
-        data: { tagId: tag.id, status: 'ERROR', message: error.message },
+        data: {
+          tagId: tag.id,
+          userId: tag.userId, // Adiciona userId no log de erro
+          status: 'ERROR',
+          message: error.message
+        },
       });
       return { tagId: tag.id, success: false, error: error.message };
     }
   }
 
-  async syncTag(tag: TagData): Promise<SyncResult> {
+  async syncTag(
+    tag: TagData,
+    brgpsBaseUrl: string,
+    brgpsToken: string,
+  ): Promise<SyncResult> {
     try {
-      const settings = await this.settingsService.getSettings();
-      const brgpsBaseUrl = settings?.brgpsBaseUrl;
-      const brgpsToken = settings?.brgpsToken;
-
-      if (!brgpsBaseUrl || !brgpsToken) {
-        throw new Error('Configurações da BRGPS ausentes no banco de dados');
-      }
-
       const url = `${brgpsBaseUrl}/tag?ids=${tag.brgpsId}`;
 
       const headers = {
@@ -332,6 +420,7 @@ export class SyncService {
       await this.prisma.syncLog.create({
         data: {
           tagId: tag.id,
+          userId: tag.userId,
           status: 'SUCCESS',
           brgpsResponse: positionData as any,
         },
@@ -341,7 +430,7 @@ export class SyncService {
 
       try {
         await this.sendToTraccar(tag, position);
-      } catch (traccarError) {
+      } catch (traccarError: any) {
         this.logger.error(
           `Erro ao enviar para Traccar: ${traccarError.message}`,
         );
@@ -352,10 +441,11 @@ export class SyncService {
         success: true,
         position,
       };
-    } catch (error) {
+    } catch (error: any) {
       await this.prisma.syncLog.create({
         data: {
           tagId: tag.id,
+          userId: tag.userId,
           status: 'ERROR',
           message: error.message,
         },
@@ -505,17 +595,23 @@ export class SyncService {
     return undefined;
   }
 
-  async getSyncLogs(tagId?: string, limit: number = 50): Promise<any> {
+  async getSyncLogs(userId?: string, tagId?: string, limit: number = 50): Promise<any> {
     return await this.prisma.syncLog.findMany({
-      where: tagId ? { tagId } : undefined,
+      where: {
+        AND: [
+          userId ? { userId } : {},
+          tagId ? { tagId } : {},
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { tag: true },
     });
   }
 
-  async getSyncHistory(limit: number = 50): Promise<any> {
+  async getSyncHistory(userId?: string, limit: number = 50): Promise<any> {
     return await this.prisma.syncOperation.findMany({
+      where: userId ? { userId } : undefined,
       orderBy: { createdAt: 'desc' },
       take: limit,
     });

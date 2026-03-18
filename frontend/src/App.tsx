@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Tags } from './pages/Tags';
 import { Settings } from './pages/Settings';
 import { Users } from './pages/Users';
+import { DeviceHistory } from './pages/DeviceHistory';
 import { useAuthStore } from './store/authStore';
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -70,6 +71,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Users />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history/:id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <DeviceHistory />
               </Layout>
             </ProtectedRoute>
           }

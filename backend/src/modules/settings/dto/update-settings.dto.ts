@@ -13,4 +13,16 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsString()
   brgpsToken?: string;
+
+  @IsOptional()
+  @IsString()
+  traccarUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  traccarToken?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
 }
