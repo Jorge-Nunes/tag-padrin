@@ -246,8 +246,9 @@ export class SyncService {
         typeof latRaw === 'string' ? parseFloat(latRaw) : (latRaw as number);
       const lon =
         typeof lonRaw === 'string' ? parseFloat(lonRaw) : (lonRaw as number);
+      const timeOffset = parseInt(this.configService.get('BRGPS_TIME_OFFSET') || '0');
       const timestampMs = positionData.timestamp
-        ? positionData.timestamp * 1000
+        ? (positionData.timestamp + timeOffset) * 1000
         : Date.now();
 
       // Transação para consistência: position + tag update (SyncLog é batch)
@@ -381,8 +382,9 @@ export class SyncService {
       const lat = typeof latRaw === 'string' ? parseFloat(latRaw) : latRaw;
       const lon = typeof lonRaw === 'string' ? parseFloat(lonRaw) : lonRaw;
 
+      const timeOffset = parseInt(this.configService.get('BRGPS_TIME_OFFSET') || '0');
       const timestampMs = positionData.timestamp
-        ? positionData.timestamp * 1000
+        ? (positionData.timestamp + timeOffset) * 1000
         : Date.now();
 
       const position = await this.prisma.position.create({

@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  password       String
+  name           String?
+  role           Role            @default(OPERATOR)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  brgpsBaseUrl   String?         @map("brgps_base_url")
+  brgpsToken     String?         @map("brgps_token")
+  syncInterval   Int             @default(60) @map("sync_interval")
+  traccarToken   String?         @map("traccar_token")
+  traccarUrl     String?         @map("traccar_url")
+  isApproved     Boolean         @default(false) @map("is_approved")
+  syncLogs       SyncLog[]
+  syncOperations SyncOperation[]
+  tags           Tag[]
+
+  @@index([brgpsBaseUrl])
+  @@map("users")
+}
+
+model Tag {
+  id                String       @id @default(uuid())
+  brgpsId           String       @map("brgps_id")
+  name              String
+  description       String?
+  status            String       @default("ACTIVE")
+  lastLatitude      Float?       @map("last_latitude")
+  lastLongitude     Float?       @map("last_longitude")
+  lastSpeed         Float?       @map("last_speed")
+  lastDirection     Int?         @map("last_direction")
+  lastPositionAt    DateTime?    @map("last_position_at")
+  lastSyncAt        DateTime?    @map("last_sync_at")
+  lastTraccarSendAt DateTime?    @map("last_traccar_send_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  isActive          Boolean      @default(true)
+  traccarUrl        String?      @map("traccar_url")
+  userId            String       @map("user_id")
+  positions         Position[]
+  syncLogs          SyncLog[]
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  traccarLogs       TraccarLog[]
+
+  @@unique([userId, brgpsId])
+  @@index([userId])
+  @@index([lastSyncAt])
+  @@index([status])
+  @@map("tags")
+}
+
+model Position {
+  id              String   @id @default(uuid())
+  tagId           String   @map("tag_id")
+  latitude        Float
+  longitude       Float
+  speed           Float?
+  direction       Int?
+  timestamp       DateTime
+  rawData         Json?    @map("raw_data")
+  createdAt       DateTime @default(now()) @map("created_at")
+  syncedToTraccar Boolean  @default(false)
+  course          Float?
+  tag             Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@index([tagId, timestamp])
+  @@index([tagId, createdAt])
+  @@index([createdAt])
+  @@index([syncedToTraccar])
+  @@map("positions")
+}
+
+model SyncLog {
+  id            String   @id @default(uuid())
+  tagId         String?  @map("tag_id")
+  message       String?
+  brgpsResponse Json?    @map("brgps_response")
+  createdAt     DateTime @default(now()) @map("created_at")
+  status        String
+  userId        String?  @map("user_id")
+  tag           Tag?     @relation(fields: [tagId], references: [id])
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tagId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("sync_logs")
+}
+
+model TraccarLog {
+  id         String   @id @default(uuid())
+  tagId      String   @map("tag_id")
+  positionId String?  @map("position_id")
+  payload    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  status     String
+  response   Json?
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@index([tagId, createdAt])
+  @@index([createdAt])
+  @@map("traccar_logs")
+}
+
+model SystemSettings {
+  id           String   @id @default("default")
+  syncInterval Int      @default(60) @map("sync_interval")
+  brgpsToken   String?  @map("brgps_token")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  brgpsBaseUrl String?  @map("brgps_base_url")
+
+  @@map("settings")
+}
+
+model SyncOperation {
+  id           String   @id @default(uuid())
+  totalTags    Int      @map("total_tags")
+  successCount Int      @map("success_count")
+  failedCount  Int      @map("failed_count")
+  durationMs   Int?     @map("duration_ms")
+  status       String   @default("SUCCESS")
+  message      String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  userId       String?  @map("user_id")
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@map("sync_operations")
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
